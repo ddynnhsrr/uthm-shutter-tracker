@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UTHM Pagoh Shuttle Bus Tracker</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* FIX: Hides the raw {{ variables }} until Vue is fully loaded */
+    [v-cloak] {
+      display: none !important;
+    }
+    
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(0.98); }
+    }
+    .pulse-glow {
+      animation: pulse-slow 2s infinite ease-in-out;
+    }
+    
+    /* Hide scrollbar for cleaner mobile look */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen pb-12">
+
+  <div id="app" class="max-w-6xl mx-auto px-4 py-4 sm:py-6" v-cloak>
+    
+    <!-- HEADER -->
+    <header class="flex flex-col md:flex-row justify-between items-center bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 gap-4 shadow-xl">
+      <div class="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 w-full md:w-auto">
+        <!-- Logo Box (Aspect Ratio 3.63, White Background) -->
+        <div class="h-12 sm:h-16 aspect-[3.63/1] bg-white rounded-xl flex items-center justify-center p-2 shadow-md overflow-hidden shrink-0">
+          <img src="logo.png" alt="UTHM Logo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <span class="hidden text-xs font-bold text-slate-900 text-center">UTHM</span>
+        </div>
+        
+        <div class="flex flex-col justify-center h-full">
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex flex-wrap justify-center sm:justify-start items-center gap-2">
+            UTHM Pagoh Shuttle
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 pulse-glow">
+              <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Status
+            </span>
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Kolej Kediaman Pagoh ⇄ Kampus Pagoh</p>
+        </div>
+      </div>
+      
+      <!-- Live Clock & Settings -->
+      <div class="text-center md:text-right w-full md:w-auto bg-slate-950 md:bg-transparent rounded-xl p-3 md:p-0 border md:border-none border-slate-800">
+        <div class="text-2xl sm:text-3xl font-mono font-bold text-amber-400 tracking-wider">
+          {{ formattedTime }}
+        </div>
+        <div class="text-xs text-slate-400 mt-1 uppercase font-semibold flex items-center justify-center md:justify-end gap-1">
+          <i class="fa-regular fa-calendar"></i> {{ currentDayDisplay }}
+          <span v-if="isDemoMode" class="text-rose-400 bg-rose-400/10 px-2 py-0.5 rounded ml-2 border border-rose-500/20">DEMO</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SYSTEM ALERTS (e.g., Weekend) -->
+    <div v-if="isWeekend && !isDemoMode" class="bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl p-4 mb-8 flex items-start gap-3">
+      <i class="fa-solid fa-circle-exclamation text-xl mt-0.5"></i>
+      <div>
+        <h4 class="font-bold">Tiada Operasi (Hujung Minggu)</h4>
+        <p class="text-sm text-amber-500/80 mt-1">Shuttle buses do not operate on weekends. Check out the <strong>Simulator</strong> at the bottom of the page to preview weekday schedules!</p>
+      </div>
+    </div>
+
+    <!-- DASHBOARD: TWO COLUMN GRID -->
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+      
+      <!-- LEFT COLUMN: LIVE RUNNING STATS -->
+      <section class="lg:col-span-1 flex flex-col gap-6">
+        
+        <!-- CARD 1: NEXT UPCOMING TRIP -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
+          <h3 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-hourglass-half text-amber-400"></i> Next Upcoming Trip
+          </h3>
+          
+          <div v-if="!nextTripsData.minutesLeft" class="py-6 text-center text-slate-500">
+            <i class="fa-regular fa-moon text-4xl mb-3 block"></i>
+            No remaining trips scheduled for today.
+          </div>
+          
+          <div v-else class="text-center py-4">
+            <div class="text-xs text-slate-400 mb-1">Departure in</div>
+            <div class="text-4xl sm:text-5xl font-mono font-black text-white tracking-tight mb-4">
+              {{ nextTripCountdown }}
+            </div>
+            
+            <!-- Sleek Pill-Shaped Design (Restored & Upgraded for multiple buses) -->
+            <div class="flex flex-col gap-2 items-center justify-center">
+              <div v-for="trip in nextTripsData.trips" :key="trip.busKey" 
+                   class="text-sm flex flex-wrap items-center justify-center gap-2 px-4 py-1.5 bg-slate-800 rounded-full border border-slate-700 w-fit max-w-full shadow-sm">
+                
+                <div class="flex items-center gap-2 whitespace-nowrap">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                  <span class="font-bold text-amber-400">{{ trip.bus }}</span> 
+                  <span class="text-slate-400 text-sm">at</span> 
+                  <span class="font-mono text-white font-bold">{{ trip.time }}</span>
+                </div>
+                
+                <!-- Special Solat Info attached cleanly inside the pill -->
+                <div v-if="trip.isSolat" class="text-[11px] font-semibold text-emerald-400 sm:border-l border-slate-600 sm:pl-2 flex items-center gap-1.5 whitespace-nowrap">
+                  <i class="fa-solid fa-mosque"></i> Masjid Hj Muhammad Yassin
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: BUSES CURRENTLY MOVING (Color restored to Emerald) -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+          <h3 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-road text-emerald-400 animate-pulse"></i> Currently On Campus Roads
+          </h3>
+          
+          <div v-if="activeBuses.length === 0" class="py-6 text-center text-slate-500">
+            <i class="fa-solid fa-square-parking text-4xl mb-3 block"></i>
+            All buses currently parked at terminal.
+          </div>
+          
+          <div v-else class="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+            <div v-for="bus in activeBuses" :key="bus.id" class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/30">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-bold border border-emerald-500/30">
+                    {{ bus.name }}
+                  </span>
+                  <p class="text-[11px] text-slate-400 mt-2">Departed at <strong class="text-white">{{ bus.departTime }}</strong></p>
+                  <p v-if="bus.isSolat" class="text-[10px] text-emerald-400/80 mt-1 flex items-center gap-1">
+                    <i class="fa-solid fa-location-dot"></i> Menuju Masjid
+                  </p>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs text-emerald-400 font-mono font-bold">{{ bus.minutesRemaining }}m left</span>
+                </div>
+              </div>
+              <!-- Simulated Progress Bar (Restored Color) -->
+              <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mt-3 border border-slate-700/50">
+                <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" :style="{ width: bus.progress + '%' }"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: FULL SCHEDULE AND REMAINING TRIPS -->
+      <section class="lg:col-span-2 flex flex-col gap-6">
+        
+        <!-- VIEW TABS -->
+        <div class="bg-slate-900 border border-slate-800 p-1.5 rounded-xl flex gap-1 shadow-sm">
+          <button 
+            @click="activeTab = 'weekday'"
+            :class="activeTab === 'weekday' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+            class="flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
+          >
+            <i class="fa-solid fa-calendar-days"></i> Isnin - Khamis
+          </button>
+          <button 
+            @click="activeTab = 'friday'"
+            :class="activeTab === 'friday' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+            class="flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
+          >
+            <i class="fa-solid fa-mosque"></i> Jumaat
+          </button>
+        </div>
+
+        <!-- TIMELINE COMPONENT -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-lg overflow-x-auto">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+            <h3 class="text-md font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-ul text-blue-500"></i> Jadual Keseluruhan
+            </h3>
+            <span class="text-[10px] sm:text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">Past trips are dimmed out</span>
+          </div>
+
+          <div class="space-y-6 min-w-[320px]">
+            <div v-for="(times, busKey) in currentScheduleData" :key="busKey" class="border-b border-slate-800/80 pb-6 last:border-0 last:pb-0">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-3 h-3 rounded-full" :class="getBusColorClass(busKey)"></span>
+                <span class="text-sm font-bold uppercase text-white tracking-wide">{{ formatBusName(busKey) }}</span>
+                <span v-if="busKey === 'solat'" class="text-[10px] text-emerald-400 border border-emerald-400/30 px-1.5 py-0.5 rounded-md ml-1">Masjid Hj Muhammad Yassin</span>
+              </div>
+              
+              <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                <div 
+                  v-for="time in times" 
+                  :key="time"
+                  :class="getTimeCellClass(time, busKey)"
+                  class="p-2 sm:p-2.5 rounded-lg border text-center text-xs font-mono font-bold transition-all flex flex-col items-center justify-center gap-0.5 sm:gap-1"
+                >
+                  <span>{{ formatDisplayTime(time) }}</span>
+                  <span class="text-[8px] sm:text-[9px] uppercase tracking-wider" v-if="getTimeState(time) === 'active'">Active</span>
+                  <span class="text-[8px] sm:text-[9px] uppercase tracking-wider" v-else-if="getTimeState(time) === 'upcoming' && isNextDirectTrip(time, busKey)">Next</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- SANDBOX / TIME CONTROLLER -->
+    <footer class="mt-8 sm:mt-12 bg-slate-900 border border-dashed border-slate-700 rounded-2xl p-4 sm:p-6 shadow-xl">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
+        <div>
+          <h4 class="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
+            <i class="fa-solid fa-flask text-rose-400 animate-pulse"></i> Time Simulator
+          </h4>
+          <p class="text-[11px] sm:text-xs text-slate-400 mt-1">Test the logic! Set time to <strong>07:45</strong> to see multiple buses depart, or <strong>12:30 (Jumaat)</strong> for Solat Jumaat.</p>
+        </div>
+        <div class="flex flex-wrap gap-3 items-center w-full md:w-auto bg-slate-950 p-2 sm:p-3 rounded-xl border border-slate-800">
+          <!-- Toggle Manual Time -->
+          <label class="inline-flex items-center cursor-pointer mr-2">
+            <input type="checkbox" v-model="isDemoMode" class="sr-only peer">
+            <div class="relative w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+            <span class="ms-2 text-xs font-bold text-slate-300">Enable</span>
+          </label>
+
+          <!-- Input Controls -->
+          <div v-if="isDemoMode" class="flex gap-2 items-center flex-1">
+            <input type="time" v-model="demoTimeInput" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs sm:text-sm font-mono text-white focus:outline-none focus:border-rose-500 w-full sm:w-auto">
+            <select v-model="demoDayInput" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs sm:text-sm text-white focus:outline-none focus:border-rose-500 w-full sm:w-auto">
+              <option :value="1">Isnin - Khamis</option>
+              <option :value="5">Jumaat</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, onUnmounted, watch } = Vue;
+
+    createApp({
+      setup() {
+        // Raw schedule data
+        const scheduleRaw = {
+          weekday: {
+            bus1: ["7.45", "8.30", "8.45", "9.45", "10.30", "11.30", "12.15", "1.15", "1.45", "3.30", "4.15", "5.30"],
+            bus2: ["7.45", "8.30", "8.45", "10.00", "11.00", "11.45", "12.30", "1.30", "2.15", "4.00", "4.30", "6.00"],
+            bus3: ["7.45", "8.30", "9.15", "10.15", "11.15", "12.15", "1.15", "1.45", "2.45", "4.15", "4.30", "6.15"]
+          },
+          friday: {
+            bus1: ["7.45", "8.30", "8.45", "9.45", "10.30", "11.30", "2.30", "2.45", "4.00", "4.30", "5.30"],
+            bus2: ["7.45", "8.30", "8.45", "10.00", "11.00", "11.45", "2.30", "2.45", "4.15", "4.45", "6.00"],
+            bus3: ["7.45", "8.30", "9.15", "10.15", "11.15", "12.15", "2.30", "3.30", "4.15", "5.00", "6.15"],
+            solat: ["12.30", "2.00"] // Represents the 3-bus Solat Jumaat schedule
+          }
+        };
+
+        const TRIP_DURATION_MINUTES = 12; // Adjusted to 12 minutes per request
+        
+        const now = ref(new Date());
+        let timer = null;
+
+        const isDemoMode = ref(false); 
+        const demoTimeInput = ref("07:45"); 
+        const demoDayInput = ref(1); 
+        const activeTab = ref("weekday");
+
+        function parseTimeToMinutes(timeStr) {
+          const [hStr, mStr] = timeStr.split('.');
+          let hour = parseInt(hStr, 10);
+          const minute = parseInt(mStr, 10);
+          
+          if (hour >= 1 && hour < 7) {
+            hour += 12;
+          }
+          return hour * 60 + minute;
+        }
+
+        const virtualMinutes = computed(() => {
+          if (isDemoMode.value) {
+            const [h, m] = demoTimeInput.value.split(':').map(Number);
+            return h * 60 + m;
+          }
+          return now.value.getHours() * 60 + now.value.getMinutes();
+        });
+
+        const virtualDay = computed(() => {
+          return isDemoMode.value ? demoDayInput.value : now.value.getDay();
+        });
+
+        const isFridayToday = computed(() => virtualDay.value === 5);
+        const isWeekend = computed(() => virtualDay.value === 0 || virtualDay.value === 6);
+
+        watch([isFridayToday, isWeekend], () => {
+          if (!isDemoMode.value) {
+            activeTab.value = isFridayToday.value ? 'friday' : 'weekday';
+          }
+        }, { immediate: true });
+
+        const currentScheduleData = computed(() => {
+          return activeTab.value === 'weekday' ? scheduleRaw.weekday : scheduleRaw.friday;
+        });
+
+        const activeBuses = computed(() => {
+          const currentMins = virtualMinutes.value;
+          const activeList = [];
+          const activeSchedule = isFridayToday.value ? scheduleRaw.friday : scheduleRaw.weekday;
+
+          Object.entries(activeSchedule).forEach(([busKey, times]) => {
+            times.forEach(timeStr => {
+              const startMins = parseTimeToMinutes(timeStr);
+              const endMins = startMins + TRIP_DURATION_MINUTES;
+
+              if (currentMins >= startMins && currentMins < endMins) {
+                const minsElapsed = currentMins - startMins;
+                const progress = (minsElapsed / TRIP_DURATION_MINUTES) * 100;
+                activeList.push({
+                  id: `${busKey}-${timeStr}`,
+                  name: formatBusName(busKey),
+                  isSolat: busKey === 'solat',
+                  departTime: formatDisplayTime(timeStr),
+                  minutesRemaining: endMins - currentMins,
+                  progress: Math.min(100, Math.max(0, progress))
+                });
+              }
+            });
+          });
+
+          return activeList;
+        });
+
+        // Compute ALL upcoming trips that share the exact same departure time
+        const nextTripsData = computed(() => {
+          const currentMins = virtualMinutes.value;
+          let minDiff = Infinity;
+          let closestTrips = [];
+          const activeSchedule = isFridayToday.value ? scheduleRaw.friday : scheduleRaw.weekday;
+
+          Object.entries(activeSchedule).forEach(([busKey, times]) => {
+            times.forEach(timeStr => {
+              const startMins = parseTimeToMinutes(timeStr);
+              const diff = startMins - currentMins;
+              
+              if (diff > 0) {
+                if (diff < minDiff) {
+                  minDiff = diff;
+                  closestTrips = [{ busKey, timeStr }];
+                } else if (diff === minDiff) {
+                  closestTrips.push({ busKey, timeStr });
+                }
+              }
+            });
+          });
+
+          // Sort trips by Bus Number to ensure "Bas 1, Bas 2..." order
+          closestTrips.sort((a, b) => a.busKey.localeCompare(b.busKey));
+
+          return {
+            minutesLeft: minDiff !== Infinity ? minDiff : null,
+            trips: closestTrips.map(trip => ({
+              bus: formatBusName(trip.busKey),
+              time: formatDisplayTime(trip.timeStr),
+              rawTime: trip.timeStr,
+              busKey: trip.busKey,
+              isSolat: trip.busKey === 'solat'
+            }))
+          };
+        });
+
+        const nextTripCountdown = computed(() => {
+          if (!nextTripsData.value.minutesLeft) return "---";
+          const diff = nextTripsData.value.minutesLeft;
+          if (diff >= 60) {
+            const h = Math.floor(diff / 60);
+            const m = diff % 60;
+            return `${h}h ${m}m`;
+          }
+          return `${diff} mins`;
+        });
+
+        function formatBusName(key) {
+          if (key === 'solat') return "Khas Solat Jumaat (3 Bas)";
+          return key.toUpperCase().replace('BUS', 'Bas ');
+        }
+
+        function formatDisplayTime(timeStr) {
+          const [hStr, mStr] = timeStr.split('.');
+          let hour = parseInt(hStr, 10);
+          const suffix = (hour >= 1 && hour < 7) || hour === 12 ? "PM" : "AM";
+          return `${hour}:${mStr} ${suffix}`;
+        }
+
+        const formattedTime = computed(() => {
+          if (isDemoMode.value) {
+            const [h, m] = demoTimeInput.value.split(':');
+            const hNum = parseInt(h, 10);
+            const suffix = hNum >= 12 ? "PM" : "AM";
+            const hDisplay = hNum % 12 || 12;
+            return `${String(hDisplay).padStart(2, '0')}:${m} ${suffix}`;
+          }
+          return now.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        });
+
+        const currentDayDisplay = computed(() => {
+          if (isDemoMode.value) {
+            return demoDayInput.value === 1 ? "Isnin - Khamis" : "Jumaat";
+          }
+          const days = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
+          return days[now.value.getDay()];
+        });
+
+        function getTimeState(timeStr) {
+          const currentMins = virtualMinutes.value;
+          const startMins = parseTimeToMinutes(timeStr);
+          const endMins = startMins + TRIP_DURATION_MINUTES;
+
+          if (currentMins >= startMins && currentMins < endMins) {
+            return 'active';
+          } else if (currentMins >= endMins) {
+            return 'past';
+          }
+          return 'upcoming';
+        }
+
+        function isNextDirectTrip(timeStr, busKey) {
+          return nextTripsData.value.trips.some(t => t.rawTime === timeStr && t.busKey === busKey);
+        }
+
+        // RESTORED TO ORIGINAL EMERALD COLORS
+        function getTimeCellClass(timeStr, busKey) {
+          const state = getTimeState(timeStr);
+          
+          if (state === 'active') {
+            return 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-500/10 animate-pulse';
+          } else if (state === 'past') {
+            return 'bg-slate-950/60 border-slate-900 text-slate-700 opacity-50';
+          } else {
+            if (isNextDirectTrip(timeStr, busKey)) {
+              return 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md shadow-amber-500/10';
+            }
+            return 'bg-slate-800/40 border-slate-700/50 text-slate-300 hover:bg-slate-800 hover:border-slate-600 cursor-default';
+          }
+        }
+
+        function getBusColorClass(busKey) {
+          if (busKey === 'solat') return 'bg-emerald-500';
+          if (busKey === 'bus1') return 'bg-cyan-500';
+          if (busKey === 'bus2') return 'bg-purple-500';
+          if (busKey === 'bus3') return 'bg-pink-500';
+          return 'bg-amber-500';
+        }
+
+        onMounted(() => {
+          timer = setInterval(() => {
+            now.value = new Date();
+          }, 1000);
+        });
+
+        onUnmounted(() => {
+          clearInterval(timer);
+        });
+
+        return {
+          scheduleRaw, now, isDemoMode, demoTimeInput, demoDayInput, activeTab,
+          currentScheduleData, isWeekend, activeBuses, nextTripsData, nextTripCountdown,
+          formattedTime, currentDayDisplay, formatBusName, formatDisplayTime,
+          getTimeCellClass, getTimeState, isNextDirectTrip, getBusColorClass
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
