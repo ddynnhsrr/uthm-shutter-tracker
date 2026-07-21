@@ -121,7 +121,7 @@
           </div>
         </div>
 
-        <!-- CARD 2: BUSES CURRENTLY MOVING (Color restored to Emerald) -->
+        <!-- CARD 2: BUSES CURRENTLY MOVING -->
         <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden">
           <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
           <h3 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-4 flex items-center gap-2">
@@ -140,18 +140,18 @@
                   <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-bold border border-emerald-500/30">
                     {{ bus.name }}
                   </span>
-                  <p class="text-[11px] text-slate-400 mt-2">Departed at <strong class="text-white">{{ bus.departTime }}</strong></p>
+                  <p class="text-[11px] text-slate-400 mt-2">Departed at <strong class="text-white font-mono">{{ bus.departTime }}</strong></p>
                   <p v-if="bus.isSolat" class="text-[10px] text-emerald-400/80 mt-1 flex items-center gap-1">
                     <i class="fa-solid fa-location-dot"></i> Menuju Masjid
                   </p>
                 </div>
                 <div class="text-right">
-                  <span class="text-xs text-emerald-400 font-mono font-bold">{{ bus.minutesRemaining }}m left(Estimated)</span>
+                  <span class="text-xs text-emerald-400 font-mono font-bold">{{ bus.minutesRemaining }}m left</span>
                 </div>
               </div>
-              <!-- Simulated Progress Bar (Restored Color) -->
+              <!-- Simulated Progress Bar (Smooth continuous per second) -->
               <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mt-3 border border-slate-700/50">
-                <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" :style="{ width: bus.progress + '%' }"></div>
+                <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000 ease-linear" :style="{ width: bus.progress + '%' }"></div>
               </div>
             </div>
           </div>
@@ -184,7 +184,7 @@
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-lg overflow-x-auto">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
             <h3 class="text-md font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-list-ul text-blue-500"></i> Jadual Keseluruhan
+              <i class="fa-solid fa-list-ul text-blue-500"></i> Jadual Keseluruhan (24-Hour)
             </h3>
             <span class="text-[10px] sm:text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">Past trips are dimmed out</span>
           </div>
@@ -245,6 +245,12 @@
       </div>
     </footer>
 
+    <!-- FOOTER INFO -->
+    <div class="mt-8 text-center space-y-2">
+      <p class="text-sm font-semibold text-rose-400">Built with ❤️ for UTHM Pagoh Students.</p>
+      <p class="text-xs text-slate-400">Alternatively, you can use <span class="text-blue-400 font-semibold cursor-pointer hover:underline">MyUTHM</span> app to see live tracking shuttle bus.</p>
+    </div>
+
   </div>
 
   <script>
@@ -252,22 +258,22 @@
 
     createApp({
       setup() {
-        // Raw schedule data
+        // Schedule data fully converted to strict 24-hour HH:mm format to resolve all AM/PM overlaps and night trips
         const scheduleRaw = {
           weekday: {
-            bus1: ["7.45", "8.30", "8.45", "9.45", "10.30", "11.30", "12.15", "1.15", "1.45", "3.30", "4.15", "5.30"],
-            bus2: ["7.45", "8.30", "8.45", "10.00", "11.00", "11.45", "12.30", "1.30", "2.15", "4.00", "4.30", "6.00"],
-            bus3: ["7.45", "8.30", "9.15", "10.15", "11.15", "12.15", "1.15", "1.45", "2.45", "4.15", "4.30", "6.15"]
+            bus1: ["07:45", "08:30", "08:45", "09:45", "10:30", "11:30", "12:15", "13:15", "13:45", "15:30", "16:15", "17:30"],
+            bus2: ["07:45", "08:30", "08:45", "10:00", "11:00", "11:45", "12:30", "13:30", "14:15", "16:00", "16:30", "18:00"],
+            bus3: ["07:45", "08:30", "09:15", "10:15", "11:15", "12:15", "13:15", "13:45", "14:45", "16:15", "16:30", "18:15"]
           },
           friday: {
-            bus1: ["7.45", "8.30", "8.45", "9.45", "10.30", "11.30", "2.30", "2.45", "4.00", "4.30", "5.30"],
-            bus2: ["7.45", "8.30", "8.45", "10.00", "11.00", "11.45", "2.30", "2.45", "4.15", "4.45", "6.00"],
-            bus3: ["7.45", "8.30", "9.15", "10.15", "11.15", "12.15", "2.30", "3.30", "4.15", "5.00", "6.15"],
-            solat: ["12.30"] // Represents the 3-bus Solat Jumaat schedule
+            bus1: ["07:45", "08:30", "08:45", "09:45", "10:30", "11:30", "14:30", "14:45", "16:00", "16:30", "17:30"],
+            bus2: ["07:45", "08:30", "08:45", "10:00", "11:00", "11:45", "14:30", "14:45", "16:15", "16:45", "18:00"],
+            bus3: ["07:45", "08:30", "09:15", "10:15", "11:15", "12:15", "14:30", "15:30", "16:15", "17:00", "18:15"],
+            solat: ["12:30"] // Represents the 3-bus Solat Jumaat schedule
           }
         };
 
-        const TRIP_DURATION_MINUTES = 11; // Adjusted to 12 minutes per request
+        const TRIP_DURATION_MINUTES = 11; 
         
         const now = ref(new Date());
         let timer = null;
@@ -277,15 +283,10 @@
         const demoDayInput = ref(1); 
         const activeTab = ref("weekday");
 
+        // Now expects format strictly like "07:30" or "22:00"
         function parseTimeToMinutes(timeStr) {
-          const [hStr, mStr] = timeStr.split('.');
-          let hour = parseInt(hStr, 10);
-          const minute = parseInt(mStr, 10);
-          
-          if (hour >= 1 && hour < 7) {
-            hour += 12;
-          }
-          return hour * 60 + minute;
+          const [hStr, mStr] = timeStr.split(':');
+          return parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
         }
 
         const virtualMinutes = computed(() => {
@@ -294,6 +295,14 @@
             return h * 60 + m;
           }
           return now.value.getHours() * 60 + now.value.getMinutes();
+        });
+
+        // Seconds computed to allow smooth, continuous progress bar tracking
+        const virtualSeconds = computed(() => {
+          if (isDemoMode.value) {
+            return virtualMinutes.value * 60;
+          }
+          return now.value.getHours() * 3600 + now.value.getMinutes() * 60 + now.value.getSeconds();
         });
 
         const virtualDay = computed(() => {
@@ -313,25 +322,27 @@
           return activeTab.value === 'weekday' ? scheduleRaw.weekday : scheduleRaw.friday;
         });
 
+        // Calculates smooth progress per second rather than per minute
         const activeBuses = computed(() => {
-          const currentMins = virtualMinutes.value;
+          const currentSecs = virtualSeconds.value;
           const activeList = [];
           const activeSchedule = isFridayToday.value ? scheduleRaw.friday : scheduleRaw.weekday;
 
           Object.entries(activeSchedule).forEach(([busKey, times]) => {
             times.forEach(timeStr => {
               const startMins = parseTimeToMinutes(timeStr);
-              const endMins = startMins + TRIP_DURATION_MINUTES;
+              const startSecs = startMins * 60;
+              const endSecs = (startMins + TRIP_DURATION_MINUTES) * 60;
 
-              if (currentMins >= startMins && currentMins < endMins) {
-                const minsElapsed = currentMins - startMins;
-                const progress = (minsElapsed / TRIP_DURATION_MINUTES) * 100;
+              if (currentSecs >= startSecs && currentSecs < endSecs) {
+                const secsElapsed = currentSecs - startSecs;
+                const progress = (secsElapsed / (TRIP_DURATION_MINUTES * 60)) * 100;
                 activeList.push({
                   id: `${busKey}-${timeStr}`,
                   name: formatBusName(busKey),
                   isSolat: busKey === 'solat',
                   departTime: formatDisplayTime(timeStr),
-                  minutesRemaining: endMins - currentMins,
+                  minutesRemaining: Math.ceil((endSecs - currentSecs) / 60), // Display minutes for readability
                   progress: Math.min(100, Math.max(0, progress))
                 });
               }
@@ -341,7 +352,6 @@
           return activeList;
         });
 
-        // Compute ALL upcoming trips that share the exact same departure time
         const nextTripsData = computed(() => {
           const currentMins = virtualMinutes.value;
           let minDiff = Infinity;
@@ -364,7 +374,6 @@
             });
           });
 
-          // Sort trips by Bus Number to ensure "Bas 1, Bas 2..." order
           closestTrips.sort((a, b) => a.busKey.localeCompare(b.busKey));
 
           return {
@@ -391,26 +400,22 @@
         });
 
         function formatBusName(key) {
-          if (key === 'solat') return "Khas Solat Jumaat (3 Bas)";
+          if (key === 'solat') return "Khas Solat Jumaat (3 Buah Bas)";
           return key.toUpperCase().replace('BUS', 'Bas ');
         }
 
+        // Now just returns the 24-hour time unmodified
         function formatDisplayTime(timeStr) {
-          const [hStr, mStr] = timeStr.split('.');
-          let hour = parseInt(hStr, 10);
-          const suffix = (hour >= 1 && hour < 7) || hour === 12 ? "PM" : "AM";
-          return `${hour}:${mStr} ${suffix}`;
+          return timeStr;
         }
 
+        // Updated for 24-hour (HH:mm:ss) format
         const formattedTime = computed(() => {
           if (isDemoMode.value) {
             const [h, m] = demoTimeInput.value.split(':');
-            const hNum = parseInt(h, 10);
-            const suffix = hNum >= 12 ? "PM" : "AM";
-            const hDisplay = hNum % 12 || 12;
-            return `${String(hDisplay).padStart(2, '0')}:${m} ${suffix}`;
+            return `${h.padStart(2, '0')}:${m}:00`;
           }
-          return now.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          return now.value.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
         });
 
         const currentDayDisplay = computed(() => {
@@ -438,7 +443,6 @@
           return nextTripsData.value.trips.some(t => t.rawTime === timeStr && t.busKey === busKey);
         }
 
-        // RESTORED TO ORIGINAL EMERALD COLORS
         function getTimeCellClass(timeStr, busKey) {
           const state = getTimeState(timeStr);
           
@@ -459,13 +463,16 @@
           if (busKey === 'bus1') return 'bg-cyan-500';
           if (busKey === 'bus2') return 'bg-purple-500';
           if (busKey === 'bus3') return 'bg-pink-500';
+          if (busKey === 'bus4') return 'bg-indigo-500'; 
+          if (busKey === 'bus5') return 'bg-teal-500';   
+          if (busKey === 'bus6') return 'bg-orange-500'; 
           return 'bg-amber-500';
         }
 
         onMounted(() => {
           timer = setInterval(() => {
             now.value = new Date();
-          }, 1000);
+          }, 1000); // 1-second interval ensures UI (clock & progress bar) updates smoothly
         });
 
         onUnmounted(() => {
