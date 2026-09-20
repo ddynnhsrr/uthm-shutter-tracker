@@ -45,7 +45,7 @@
         
         <div class="flex flex-col justify-center h-full">
           <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex flex-wrap justify-center sm:justify-start items-center gap-2">
-            UTHM Pagoh Shuttle (Special Semester 2026/2027)
+            UTHM Pagoh Shuttle (Semester I 2026/2027)
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 pulse-glow">
               <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-ping"></span> Status
             </span>
@@ -248,7 +248,7 @@
     <!-- FOOTER INFO -->
     <div class="mt-8 text-center space-y-2">
       <p class="text-sm font-semibold text-rose-400">Built with ❤️ for UTHM Pagoh Students.</p>
-      <p class="text-xs text-slate-400">Alternatively, you can use <span class="text-blue-400 font-semibold cursor-pointer hover:underline">MyUTHM</span> app to see live tracking shuttle bus.</p>
+      <p class="text-xs text-slate-400">Alternatively, you can use <span class="text-blue-400 font-semibold cursor-pointer hover:underline">MyUTHM</span> to see live tracking Shuttle Bus.</p>
     </div>
 
   </div>
@@ -261,15 +261,21 @@
         // Schedule data fully converted to strict 24-hour HH:mm format to resolve all AM/PM overlaps and night trips
         const scheduleRaw = {
           weekday: {
-            bus1: ["07:45", "08:30", "08:45", "09:45", "10:30", "11:30", "12:15", "13:15", "13:45", "15:30", "16:15", "17:30"],
-            bus2: ["07:45", "08:30", "08:45", "10:00", "11:00", "11:45", "12:30", "13:30", "14:15", "16:00", "16:30", "18:00"],
-            bus3: ["07:45", "08:30", "09:15", "10:15", "11:15", "12:15", "13:15", "13:45", "14:45", "16:15", "16:30", "18:15"]
+            bus1: ["07:30", "07:45", "08:15", "08:45", "10:00", "11:00", "12:15", "13:15", "14:15", "15:15", "16:15", "17:00"],
+            bus2: ["07:30", "07:45", "08:15", "09:15", "10:15", "11:15", "12:30", "13:30", "14:15", "15:15", "16:30", "17:30"],
+            bus3: ["07:30", "07:45", "08:30", "09:30", "10:30", "11:30", "12:30", "13:30", "14:30", "15:30", "17:00", "18:00"],
+            bus4: ["07:30", "07:45", "08:30", "09:45", "10:30", "11:45", "12:45", "13:45", "14:30", "15:45", "17:30", "18:30"],
+            bus5: ["07:30", "07:45", "08:45", "10:00", "10:45", "12:00", "13:15", "13:45", "14:45", "16:15", "18:00", "19:00"],
+            bus6: ["15:00", "16:00", "17:00", "18:00", "18:30", "19:00", "20:00", "21:00", "21:30", "22:00", "22:30", "23:00"]
           },
           friday: {
-            bus1: ["07:45", "08:30", "08:45", "09:45", "10:30", "11:30", "14:30", "14:45", "16:00", "16:30", "17:30"],
-            bus2: ["07:45", "08:30", "08:45", "10:00", "11:00", "11:45", "14:30", "14:45", "16:15", "16:45", "18:00"],
-            bus3: ["07:45", "08:30", "09:15", "10:15", "11:15", "12:15", "14:30", "15:30", "16:15", "17:00", "18:15"],
-            solat: ["12:30"] // Represents the 3-bus Solat Jumaat schedule
+            bus1: ["07:30", "07:45", "08:15", "09:15", "10:15", "11:15", "12:00", "14:15", "15:15", "16:45", "18:00"],
+            bus2: ["07:30", "07:45", "08:15", "09:15", "10:15", "11:15", "12:00", "14:15", "15:30", "17:00", "18:15"],
+            bus3: ["07:30", "07:45", "08:30", "09:30", "10:30", "11:30", "12:00", "14:30", "15:45", "17:15", "18:30"],
+            bus4: ["07:30", "07:45", "08:30", "09:30", "10:30", "11:30", "12:15", "14:30", "16:00", "17:30", "19:00"],
+            bus5: ["07:30", "07:45", "08:45", "09:45", "10:45", "11:45", "12:15", "14:45", "16:15", "17:30", "19:00"],
+            bus6: ["07:30", "07:45", "08:45", "09:45", "10:45", "11:45", "12:15", "14:45", "16:30", "17:45", "19:00"],
+            solat: ["12:30", "14:00"] // Represents the 6-bus Solat Jumaat schedule
           }
         };
 
@@ -400,7 +406,7 @@
         });
 
         function formatBusName(key) {
-          if (key === 'solat') return "Khas Solat Jumaat (3 Buah Bas)";
+          if (key === 'solat') return "Khas Solat Jumaat (6 Buah Bas)";
           return key.toUpperCase().replace('BUS', 'Bas ');
         }
 
