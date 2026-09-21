@@ -279,7 +279,7 @@
           }
         };
 
-        const TRIP_DURATION_MINUTES = 11; 
+        const TRIP_DURATION_MINUTES = 15; 
         
         const now = ref(new Date());
         let timer = null;
@@ -428,7 +428,7 @@
           if (isDemoMode.value) {
             return demoDayInput.value === 1 ? "Isnin - Khamis" : "Jumaat";
           }
-          const days = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
+          const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
           return days[now.value.getDay()];
         });
 
