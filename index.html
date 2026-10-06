@@ -5,121 +5,229 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UTHM Pagoh Shuttle Bus Tracker</title>
 
-    <!-- Favicon code-->
-    <link rel="icon" type="image/x-icon" href="icon1.ico">
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="icon1.ico">
+  <link rel="apple-touch-icon" href="icon2.png">
 
-    <link rel="apple-touch-icon" href="icon2.png">
-
-  <!-- Tailwind CSS CDN -->
+  <!-- External CDNs: Tailwind CSS, Vue 3, FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Vue 3 CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <!-- FontAwesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+
   <style>
-    /* FIX: Hides the raw {{ variables }} until Vue is fully loaded */
-    [v-cloak] {
-      display: none !important;
+    [v-cloak] { display: none !important; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #030712;
+      color: #f3f4f6;
+      overflow-x: hidden;
     }
-    
-    @keyframes pulse-slow {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(0.98); }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
     }
-    .pulse-glow {
-      animation: pulse-slow 2s infinite ease-in-out;
+
+    /* Ambient Liquid Orb Animations */
+    @keyframes orb-float-1 {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(30px, -50px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
     }
-    
-    /* Hide scrollbar for cleaner mobile look */
+    @keyframes orb-float-2 {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(-40px, 30px) scale(1.05); }
+      66% { transform: translate(25px, -35px) scale(1.15); }
+    }
+    @keyframes orb-float-3 {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      50% { transform: translate(40px, 40px) scale(1.2); }
+    }
+
+    .animate-orb-1 { animation: orb-float-1 18s ease-in-out infinite; }
+    .animate-orb-2 { animation: orb-float-2 22s ease-in-out infinite; }
+    .animate-orb-3 { animation: orb-float-3 25s ease-in-out infinite; }
+
+    /* Liquid Glassmorphism Styling */
+    .liquid-glass {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
+                  inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .liquid-glass-interactive {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .liquid-glass-interactive:hover {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
+      border-color: rgba(255, 255, 255, 0.25);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5),
+                  inset 0 1px 2px 0 rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .glass-input {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.2s ease;
+    }
+    .glass-input:focus {
+      border-color: rgba(244, 63, 94, 0.5);
+      box-shadow: 0 0 15px rgba(244, 63, 94, 0.25);
+      outline: none;
+    }
+
+    /* Glow utility effects */
+    .glow-cyan { box-shadow: 0 0 20px rgba(6, 182, 212, 0.35); }
+    .glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.35); }
+    .glow-amber { box-shadow: 0 0 20px rgba(245, 158, 11, 0.35); }
+    .glow-rose { box-shadow: 0 0 20px rgba(244, 63, 94, 0.35); }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(200%); }
+    }
+    .liquid-shimmer {
+      position: relative;
+      overflow: hidden;
+    }
+    .liquid-shimmer::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+      animation: shimmer 2.5s infinite;
+    }
+
+    /* Custom Mobile Scrollbars */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.8); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen pb-12">
+<body class="min-h-screen relative pb-12 selection:bg-cyan-500 selection:text-white">
 
-  <div id="app" class="max-w-6xl mx-auto px-4 py-4 sm:py-6" v-cloak>
-    
+  <!-- BACKGROUND FLOATING LIQUID GLOW ORBS -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-cyan-600/20 blur-[120px] animate-orb-1"></div>
+    <div class="absolute top-[30%] right-[-10%] w-[550px] h-[550px] rounded-full bg-purple-600/20 blur-[130px] animate-orb-2"></div>
+    <div class="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-emerald-600/15 blur-[140px] animate-orb-3"></div>
+    <div class="absolute top-[60%] left-[50%] w-[400px] h-[400px] rounded-full bg-amber-600/10 blur-[110px] animate-orb-1"></div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app" class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8" v-cloak>
+
     <!-- HEADER -->
-    <header class="flex flex-col md:flex-row justify-between items-center bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 gap-4 shadow-xl">
-      <div class="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 w-full md:w-auto">
-        <!-- Logo Box (Aspect Ratio 3.63, White Background) -->
-        <div class="h-12 sm:h-16 aspect-[3.63/1] bg-white rounded-xl flex items-center justify-center p-2 shadow-md overflow-hidden shrink-0">
+    <header class="liquid-glass rounded-3xl p-5 sm:p-7 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-center gap-6 relative">
+      <!-- Top Specular Highlight Edge -->
+      <div class="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"></div>
+
+      <div class="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 w-full md:w-auto">
+        <!-- Logo Box -->
+        <div class="h-14 sm:h-16 aspect-[3.63/1] bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center p-2.5 shadow-lg shadow-black/20 border border-white/40 shrink-0 transform transition-transform hover:scale-105">
           <img src="logo.png" alt="UTHM Logo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-          <span class="hidden text-xs font-bold text-slate-900 text-center">UTHM</span>
+          <span class="hidden text-xs font-black tracking-wider text-slate-900 text-center">UTHM</span>
         </div>
-        
+
         <div class="flex flex-col justify-center h-full">
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex flex-wrap justify-center sm:justify-start items-center gap-2">
-            UTHM Pagoh Shuttle (Semester I 2026/2027)
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 pulse-glow">
-              <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-ping"></span> Status
+          <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex flex-wrap justify-center sm:justify-start items-center gap-2.5">
+            <span>UTHM Pagoh Shuttle</span>
+            <span class="text-xs font-semibold text-slate-400 font-mono">(Sem I 2026/2027)</span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 glow-emerald">
+              <span class="w-2 h-2 mr-2 rounded-full bg-emerald-400 animate-ping"></span> Live Status
             </span>
           </h1>
-          <p class="text-xs text-slate-400 mt-1">Kolej Kediaman Pagoh ⇄ Kampus Pagoh</p>
+          <p class="text-xs font-medium text-slate-300/80 mt-1 flex items-center justify-center sm:justify-start gap-1.5">
+            <i class="fa-solid fa-route text-cyan-400"></i> Kolej Kediaman Pagoh <i class="fa-solid fa-arrow-right-long text-slate-500 text-[10px]"></i> Kampus Pagoh
+          </p>
         </div>
       </div>
-      
-      <!-- Live Clock & Settings -->
-      <div class="text-center md:text-right w-full md:w-auto bg-slate-950 md:bg-transparent rounded-xl p-3 md:p-0 border md:border-none border-slate-800">
-        <div class="text-2xl sm:text-3xl font-mono font-bold text-amber-400 tracking-wider">
+
+      <!-- Live Clock & Date Badge -->
+      <div class="text-center md:text-right w-full md:w-auto bg-slate-950/40 md:bg-transparent rounded-2xl p-4 md:p-0 border border-white/5 md:border-none">
+        <div class="text-3xl sm:text-4xl font-mono font-black text-amber-400 tracking-wider drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]">
           {{ formattedTime }}
         </div>
-        <div class="text-xs text-slate-400 mt-1 uppercase font-semibold flex items-center justify-center md:justify-end gap-1">
-          <i class="fa-regular fa-calendar"></i> {{ currentDayDisplay }}
-          <span v-if="isDemoMode" class="text-rose-400 bg-rose-400/10 px-2 py-0.5 rounded ml-2 border border-rose-500/20">DEMO</span>
+        <div class="text-xs font-bold text-slate-300 mt-1 uppercase tracking-widest flex items-center justify-center md:justify-end gap-1.5">
+          <i class="fa-regular fa-calendar-check text-cyan-400"></i> {{ currentDayDisplay }}
+          <span v-if="isDemoMode" class="text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-full text-[10px] border border-rose-500/30 glow-rose">DEMO MODE</span>
         </div>
       </div>
     </header>
 
     <!-- SYSTEM ALERTS (e.g., Weekend) -->
-    <div v-if="isWeekend && !isDemoMode" class="bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl p-4 mb-8 flex items-start gap-3">
-      <i class="fa-solid fa-circle-exclamation text-xl mt-0.5"></i>
-      <div>
-        <h4 class="font-bold">No Operation (Weekends)</h4>
-        <p class="text-sm text-amber-500/80 mt-1">Shuttle buses do not operate on weekends. Check out the <strong>Simulator</strong> at the bottom of the page to preview weekday schedules!</p>
+    <transition name="fade">
+      <div v-if="isWeekend && !isDemoMode" class="liquid-glass border-amber-500/30 text-amber-300 rounded-2xl p-5 mb-8 flex items-start gap-4 glow-amber">
+        <div class="p-3 bg-amber-500/20 rounded-xl text-amber-400 border border-amber-500/30 shrink-0">
+          <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-base text-amber-200">No Bus Operations Today (Weekend)</h4>
+          <p class="text-xs text-amber-300/80 mt-1 leading-relaxed">
+            Shuttle buses do not operate on weekends. You can enable the <strong class="text-white underline">Time Simulator</strong> at the bottom of the page to test weekday schedule automation!
+          </p>
+        </div>
       </div>
-    </div>
+    </transition>
 
     <!-- DASHBOARD: TWO COLUMN GRID -->
     <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-      
+
       <!-- LEFT COLUMN: LIVE RUNNING STATS -->
       <section class="lg:col-span-1 flex flex-col gap-6">
-        
+
         <!-- CARD 1: NEXT UPCOMING TRIP -->
-        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
-          <h3 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-hourglass-half text-amber-400"></i> Next Upcoming Trip
+        <div class="liquid-glass rounded-3xl p-6 relative overflow-hidden group">
+          <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <h3 class="text-xs uppercase tracking-widest text-slate-300 font-extrabold mb-5 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-500/30">
+              <i class="fa-solid fa-hourglass-half"></i>
+            </span>
+            Next Upcoming Trip
           </h3>
-          
-          <div v-if="!nextTripsData.minutesLeft" class="py-6 text-center text-slate-500">
-            <i class="fa-regular fa-moon text-4xl mb-3 block"></i>
-            No remaining trips scheduled for today.
+
+          <div v-if="!nextTripsData.minutesLeft" class="py-8 text-center text-slate-400">
+            <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-slate-800/50 flex items-center justify-center text-2xl border border-white/5">
+              <i class="fa-regular fa-moon text-amber-300"></i>
+            </div>
+            <p class="text-sm font-semibold text-slate-300">No remaining trips scheduled today.</p>
+            <p class="text-xs text-slate-500 mt-1">Check back tomorrow morning!</p>
           </div>
-          
-          <div v-else class="text-center py-4">
-            <div class="text-xs text-slate-400 mb-1">Departure in</div>
-            <div class="text-4xl sm:text-5xl font-mono font-black text-white tracking-tight mb-4">
+
+          <div v-else class="text-center py-2">
+            <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Departure in</div>
+            <div class="text-4xl sm:text-5xl font-mono font-black text-white tracking-tight mb-5 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
               {{ nextTripCountdown }}
             </div>
-            
-            <!-- Sleek Pill-Shaped Design (Restored & Upgraded for multiple buses) -->
-            <div class="flex flex-col gap-2 items-center justify-center">
-              <div v-for="trip in nextTripsData.trips" :key="trip.busKey" 
-                   class="text-sm flex flex-wrap items-center justify-center gap-2 px-4 py-1.5 bg-slate-800 rounded-full border border-slate-700 w-fit max-w-full shadow-sm">
-                
+
+            <!-- Sleek Glass Pill Badge Container for Departing Buses -->
+            <div class="flex flex-col gap-2.5 items-center justify-center">
+              <div v-for="trip in nextTripsData.trips" :key="trip.busKey"
+                   class="liquid-glass-interactive px-4 py-2 rounded-2xl text-xs flex flex-wrap items-center justify-center gap-2.5 w-full shadow-md">
+
                 <div class="flex items-center gap-2 whitespace-nowrap">
-                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                  <span class="font-bold text-amber-400">{{ trip.bus }}</span> 
-                  <span class="text-slate-400 text-sm">at</span> 
-                  <span class="font-mono text-white font-bold">{{ trip.time }}</span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                  <span class="font-extrabold text-amber-300 tracking-wide">{{ trip.bus }}</span>
+                  <span class="text-slate-400">at</span>
+                  <span class="font-mono text-white font-bold bg-slate-950/50 px-2 py-0.5 rounded-md border border-white/10">{{ trip.time }}</span>
                 </div>
-                
-                <!-- Special Solat Info attached cleanly inside the pill -->
-                <div v-if="trip.isSolat" class="text-[11px] font-semibold text-emerald-400 sm:border-l border-slate-600 sm:pl-2 flex items-center gap-1.5 whitespace-nowrap">
-                  <i class="fa-solid fa-mosque"></i> Masjid Hj Muhammad Yassin
+
+                <div v-if="trip.isSolat" class="text-[11px] font-bold text-emerald-300 sm:border-l border-white/10 sm:pl-2.5 flex items-center gap-1.5 whitespace-nowrap">
+                  <i class="fa-solid fa-mosque text-emerald-400"></i> Masjid Hj Muhammad Yassin
                 </div>
 
               </div>
@@ -128,36 +236,46 @@
         </div>
 
         <!-- CARD 2: BUSES CURRENTLY MOVING -->
-        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
-          <h3 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-road text-emerald-400 animate-pulse"></i> Currently On Campus Roads
+        <div class="liquid-glass rounded-3xl p-6 relative overflow-hidden">
+          <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <h3 class="text-xs uppercase tracking-widest text-slate-300 font-extrabold mb-5 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+              <i class="fa-solid fa-bus animate-pulse"></i>
+            </span>
+            On Campus Roads
           </h3>
-          
-          <div v-if="activeBuses.length === 0" class="py-6 text-center text-slate-500">
-            <i class="fa-solid fa-square-parking text-4xl mb-3 block"></i>
-            All buses currently parked at College Cafe.
+
+          <div v-if="activeBuses.length === 0" class="py-8 text-center text-slate-400">
+            <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-slate-800/50 flex items-center justify-center text-2xl border border-white/5">
+              <i class="fa-solid fa-square-parking text-slate-500"></i>
+            </div>
+            <p class="text-sm font-semibold text-slate-300">All buses parked at College Cafe.</p>
+            <p class="text-xs text-slate-500 mt-1">No shuttle actively in transit right now.</p>
           </div>
-          
-          <div v-else class="space-y-4 max-h-[300px] overflow-y-auto pr-1">
-            <div v-for="bus in activeBuses" :key="bus.id" class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/30">
+
+          <div v-else class="space-y-4 max-h-[320px] overflow-y-auto pr-1">
+            <div v-for="bus in activeBuses" :key="bus.id" class="liquid-glass-interactive p-4 rounded-2xl relative">
               <div class="flex justify-between items-start mb-2">
                 <div>
-                  <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-bold border border-emerald-500/30">
-                    {{ bus.name }}
+                  <span class="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 text-xs px-3 py-1 rounded-full font-black border border-emerald-500/30 glow-emerald">
+                    <i class="fa-solid fa-circle text-[8px] animate-ping"></i> {{ bus.name }}
                   </span>
-                  <p class="text-[11px] text-slate-400 mt-2">Departed at <strong class="text-white font-mono">{{ bus.departTime }}</strong></p>
-                  <p v-if="bus.isSolat" class="text-[10px] text-emerald-400/80 mt-1 flex items-center gap-1">
-                    <i class="fa-solid fa-location-dot"></i> Heading to Mosque
+                  <p class="text-[11px] text-slate-300 mt-2">Departed: <strong class="text-white font-mono bg-slate-950/40 px-1.5 py-0.5 rounded border border-white/10">{{ bus.departTime }}</strong></p>
+                  <p v-if="bus.isSolat" class="text-[10px] text-emerald-300/90 font-semibold mt-1 flex items-center gap-1">
+                    <i class="fa-solid fa-location-dot text-emerald-400"></i> Direct to Masjid Yassin
                   </p>
                 </div>
                 <div class="text-right">
-                  <span class="text-xs text-emerald-400 font-mono font-bold">{{ bus.minutesRemaining }}m left</span>
+                  <span class="text-xs text-emerald-400 font-mono font-extrabold bg-emerald-950/50 px-2 py-1 rounded-lg border border-emerald-500/20">
+                    {{ bus.minutesRemaining }}m left
+                  </span>
                 </div>
               </div>
-              <!-- Simulated Progress Bar (Smooth continuous per second) -->
-              <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mt-3 border border-slate-700/50">
-                <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000 ease-linear" :style="{ width: bus.progress + '%' }"></div>
+
+              <!-- Animated Liquid Progress Bar -->
+              <div class="w-full bg-slate-950/60 rounded-full h-2 overflow-hidden mt-3 border border-white/10 p-0.5">
+                <div class="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 h-full rounded-full transition-all duration-1000 ease-linear liquid-shimmer" :style="{ width: bus.progress + '%' }"></div>
               </div>
             </div>
           </div>
@@ -165,54 +283,64 @@
 
       </section>
 
-      <!-- RIGHT COLUMN: FULL SCHEDULE AND REMAINING TRIPS -->
+      <!-- RIGHT COLUMN: FULL SCHEDULE AND TIMELINE -->
       <section class="lg:col-span-2 flex flex-col gap-6">
-        
-        <!-- VIEW TABS -->
-        <div class="bg-slate-900 border border-slate-800 p-1.5 rounded-xl flex gap-1 shadow-sm">
+
+        <!-- VIEW TABS WITH SLIDING GLASS STYLE -->
+        <div class="liquid-glass p-1.5 rounded-2xl flex gap-2 shadow-lg">
           <button 
             @click="activeTab = 'weekday'"
-            :class="activeTab === 'weekday' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
-            class="flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
+            :class="activeTab === 'weekday' ? 'bg-gradient-to-r from-blue-600/80 to-indigo-600/80 text-white shadow-lg border border-white/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+            class="flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 flex items-center justify-center gap-2"
           >
-            <i class="fa-solid fa-calendar-days"></i> Monday - Thursday
+            <i class="fa-solid fa-calendar-days text-cyan-300"></i> Isnin - Khamis
           </button>
           <button 
             @click="activeTab = 'friday'"
-            :class="activeTab === 'friday' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
-            class="flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
+            :class="activeTab === 'friday' ? 'bg-gradient-to-r from-emerald-600/80 to-teal-600/80 text-white shadow-lg border border-white/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+            class="flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 flex items-center justify-center gap-2"
           >
-            <i class="fa-solid fa-mosque"></i> Friday
+            <i class="fa-solid fa-mosque text-emerald-300"></i> Jumaat
           </button>
         </div>
 
         <!-- TIMELINE COMPONENT -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-lg overflow-x-auto">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
-            <h3 class="text-md font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-list-ul text-blue-500"></i> Overall Schedule
-            </h3>
-            <span class="text-[10px] sm:text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">Past trips are dimmed out</span>
+        <div class="liquid-glass rounded-3xl p-5 sm:p-7 shadow-xl overflow-x-auto">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2 border-b border-white/10 pb-4">
+            <div>
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2.5">
+                <i class="fa-solid fa-list-ul text-cyan-400"></i> Schedule Timeline
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Automated status tracking based on current university hours</p>
+            </div>
+            <div class="flex items-center gap-3 text-[11px] font-medium text-slate-300 bg-slate-950/40 px-3 py-1.5 rounded-xl border border-white/10">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Active</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Next</span>
+              <span class="flex items-center gap-1 opacity-50"><span class="w-2 h-2 rounded-full bg-slate-600"></span> Past</span>
+            </div>
           </div>
 
           <div class="space-y-6 min-w-[320px]">
-            <div v-for="(times, busKey) in currentScheduleData" :key="busKey" class="border-b border-slate-800/80 pb-6 last:border-0 last:pb-0">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="w-3 h-3 rounded-full" :class="getBusColorClass(busKey)"></span>
-                <span class="text-sm font-bold uppercase text-white tracking-wide">{{ formatBusName(busKey) }}</span>
-                <span v-if="busKey === 'solat'" class="text-[10px] text-emerald-400 border border-emerald-400/30 px-1.5 py-0.5 rounded-md ml-1">Masjid Hj Muhammad Yassin</span>
+            <div v-for="(times, busKey) in currentScheduleData" :key="busKey" class="border-b border-white/5 pb-6 last:border-0 last:pb-0">
+              <div class="flex items-center gap-2.5 mb-3.5">
+                <span class="w-3.5 h-3.5 rounded-full shadow-md" :class="getBusColorClass(busKey)"></span>
+                <span class="text-sm font-extrabold uppercase text-white tracking-wider">{{ formatBusName(busKey) }}</span>
+                <span v-if="busKey === 'solat'" class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                  Solat Jumaat Special Route
+                </span>
               </div>
-              
-              <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+
+              <!-- Time Grid Cells -->
+              <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5">
                 <div 
                   v-for="time in times" 
                   :key="time"
                   :class="getTimeCellClass(time, busKey)"
-                  class="p-2 sm:p-2.5 rounded-lg border text-center text-xs font-mono font-bold transition-all flex flex-col items-center justify-center gap-0.5 sm:gap-1"
+                  class="p-2.5 rounded-xl text-center font-mono font-bold transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
                 >
-                  <span>{{ formatDisplayTime(time) }}</span>
-                  <span class="text-[8px] sm:text-[9px] uppercase tracking-wider" v-if="getTimeState(time) === 'active'">Active</span>
-                  <span class="text-[8px] sm:text-[9px] uppercase tracking-wider" v-else-if="getTimeState(time) === 'upcoming' && isNextDirectTrip(time, busKey)">Next</span>
+                  <span class="text-xs tracking-tight">{{ formatDisplayTime(time) }}</span>
+                  <span class="text-[8px] uppercase font-sans tracking-widest font-black" v-if="getTimeState(time) === 'active'">ON ROAD</span>
+                  <span class="text-[8px] uppercase font-sans tracking-widest font-black" v-else-if="getTimeState(time) === 'upcoming' && isNextDirectTrip(time, busKey)">NEXT</span>
                 </div>
               </div>
             </div>
@@ -223,67 +351,81 @@
     </main>
 
     <!-- SANDBOX / TIME CONTROLLER -->
-    <footer class="mt-8 sm:mt-12 bg-slate-900 border border-dashed border-slate-700 rounded-2xl p-4 sm:p-6 shadow-xl">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
-        <div>
-          <h4 class="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
-            <i class="fa-solid fa-flask text-rose-400 animate-pulse"></i> Time Simulator
+    <footer class="mt-8 sm:mt-12 liquid-glass border-dashed border-slate-600/50 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div class="max-w-xl">
+          <h4 class="font-extrabold text-white flex items-center gap-2.5 text-base">
+            <span class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center border border-rose-500/30">
+              <i class="fa-solid fa-flask animate-pulse"></i>
+            </span>
+            Time Simulator & Debug Sandbox
           </h4>
-          <p class="text-[11px] sm:text-xs text-slate-400 mt-1">Test the logic! Set time to <strong>07:45</strong> to see multiple buses depart, or <strong>12:30 (Jumaat)</strong> for Solat Jumaat.</p>
+          <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+            Test and verify bus schedules in real-time. Toggle manual mode, set custom departure times (e.g., <span class="font-mono text-amber-300 font-bold">07:45</span> for morning rush or <span class="font-mono text-emerald-300 font-bold">12:30 Friday</span> for Solat Jumaat).
+          </p>
         </div>
-        <div class="flex flex-wrap gap-3 items-center w-full md:w-auto bg-slate-950 p-2 sm:p-3 rounded-xl border border-slate-800">
-          <!-- Toggle Manual Time -->
-          <label class="inline-flex items-center cursor-pointer mr-2">
+
+        <div class="flex flex-wrap gap-3 items-center w-full lg:w-auto bg-slate-950/60 p-3 rounded-2xl border border-white/10">
+          <!-- Toggle Manual Time Switch -->
+          <label class="inline-flex items-center cursor-pointer mr-2 select-none">
             <input type="checkbox" v-model="isDemoMode" class="sr-only peer">
-            <div class="relative w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
-            <span class="ms-2 text-xs font-bold text-slate-300">Enable</span>
+            <div class="relative w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500 shadow-inner"></div>
+            <span class="ms-3 text-xs font-extrabold text-slate-200">Enable Demo</span>
           </label>
 
           <!-- Input Controls -->
-          <div v-if="isDemoMode" class="flex gap-2 items-center flex-1">
-            <input type="time" v-model="demoTimeInput" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs sm:text-sm font-mono text-white focus:outline-none focus:border-rose-500 w-full sm:w-auto">
-            <select v-model="demoDayInput" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs sm:text-sm text-white focus:outline-none focus:border-rose-500 w-full sm:w-auto">
-              <option :value="1">Isnin - Khamis</option>
-              <option :value="5">Jumaat</option>
+          <div v-if="isDemoMode" class="flex flex-wrap sm:flex-nowrap gap-2 items-center w-full sm:w-auto">
+            <input type="time" v-model="demoTimeInput" class="glass-input text-white text-xs sm:text-sm font-mono font-bold rounded-xl px-3 py-1.5 w-full sm:w-auto">
+            <select v-model="demoDayInput" class="glass-input text-white text-xs sm:text-sm font-bold rounded-xl px-3 py-1.5 w-full sm:w-auto">
+              <option :value="1" class="bg-slate-900 text-white">Isnin - Khamis</option>
+              <option :value="5" class="bg-slate-900 text-white">Jumaat</option>
             </select>
           </div>
         </div>
       </div>
     </footer>
 
-     <!-- FOOTER INFO -->
-    <div class="mt-8 text-center space-y-2">
-      <p class="text-sm font-semibold text-rose-400">Built with ❤️ for UTHM Pagoh Students.</p>
-      <p class="text-xs text-slate-400">Alternatively, you can use <a href="https://uthm.katsana.com/#/campus/pagoh/route/12" target="_blank" rel="noopener noreferrer" class="text-blue-400 font-semibold hover:underline">UTHM KATSANA(R) Shuttle</a> to see live tracking Shuttle Bus.</p>
+    <!-- FOOTER INFO -->
+    <div class="mt-8 mb-4 text-center space-y-2">
+      <p class="text-sm font-bold text-rose-400/90 flex items-center justify-center gap-1.5">
+        Built with <i class="fa-solid fa-heart text-rose-500 animate-bounce"></i> for UTHM Pagoh Students
+      </p>
+      <p class="text-xs text-slate-400">
+        Official GPS tracking available at 
+        <a href="https://uthm.katsana.com/#/campus/pagoh/route/12" target="_blank" rel="noopener noreferrer" class="text-cyan-400 font-bold hover:underline inline-flex items-center gap-1">
+          UTHM KATSANA(R) Shuttle <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+        </a>
+      </p>
     </div>
 
   </div>
 
+  <!-- VUE 3 APPLICATION SCRIPT -->
   <script>
     const { createApp, ref, computed, onMounted, onUnmounted, watch } = Vue;
 
     createApp({
       setup() {
-        // Schedule data fully converted to strict 24-hour HH:mm format to resolve all AM/PM overlaps and night trips
-        const scheduleRaw = {
-  weekday: {
-    bus1: ["07:30", "07:45", "08:00", "09:30", "10:15", "11:30", "13:15", "13:45", "15:45", "17:15"],
-    bus2: ["07:30", "07:45", "08:15", "09:45", "10:30", "11:45", "13:30", "14:00", "16:00", "17:45"],
-    bus3: ["07:30", "07:45", "08:30", "09:45", "10:45", "12:00", "13:30", "14:15", "16:00", "18:00"],
-    bus4: ["07:30", "07:45", "08:45", "10:00", "11:00", "12:30", "13:30", "14:45", "16:15", "18:30"],
-    bus5: ["07:30", "07:45", "09:15", "10:00", "11:15", "12:45", "13:45", "15:15", "17:00", "19:00"],
-    bus6: ["15:30", "16:30", "17:30", "18:30", "19:30", "19:45", "20:15", "21:15", "22:30", "23:00"]
-  },
-  friday: {
-    bus1: ["07:30", "07:45", "08:15", "10:15", "12:15", "14:30", "15:15", "16:30", "18:15"],
-    bus2: ["07:30", "07:45", "08:30", "10:30", "12:15", "14:30", "15:45", "16:30", "18:45"],
-    bus3: ["07:30", "07:45", "08:45", "10:45", "12:15", "14:30", "16:30", "17:30", "19:00"],
-    bus4: ["07:30", "07:45", "09:15", "11:15", "12:15", "14:30", "16:30", "17:30", "19:00"],
-    bus5: ["07:30", "07:45", "09:30", "11:30", "12:15", "14:30", "16:30", "17:30", "19:00"],
-    bus6: ["07:30", "07:45", "09:45", "11:45", "12:15", "14:30", "16:30", "17:30", "19:00"],
-    solat: ["12:30"] // 6 bas bertolak 12:30 ke Masjid Hj Muhammad Yassin
-  }
-};
+        // Updated Schedule Data in 24-hour HH:mm format based on official UTHM Pagoh timetable
+             const scheduleRaw = {
+weekday: {
+  bus1: ["07:30", "07:45", "08:00", "09:30", "10:15", "11:30", "13:15", "13:45", "15:45", "17:15"],
+  bus2: ["07:30", "07:45", "08:15", "09:45", "10:30", "11:45", "13:30", "14:00", "16:00", "17:45"],
+  bus3: ["07:30", "07:45", "08:30", "09:45", "10:45", "12:00", "13:30", "14:15", "16:00", "18:00"],
+  bus4: ["07:30", "07:45", "08:45", "10:00", "11:00", "12:30", "13:30", "14:45", "16:15", "18:30"],
+  bus5: ["07:30", "07:45", "09:15", "10:00", "11:15", "12:45", "13:45", "15:15", "17:00", "19:00"],
+  bus6: ["15:30", "16:30", "17:30", "18:30", "19:30", "19:45", "20:15", "21:15", "22:30", "23:00"]
+},
+friday: {
+  bus1: ["07:30", "07:45", "08:15", "10:15", "12:15", "14:30", "15:15", "16:30", "18:15"],
+  bus2: ["07:30", "07:45", "08:30", "10:30", "12:15", "14:30", "15:45", "16:30", "18:45"],
+  bus3: ["07:30", "07:45", "08:45", "10:45", "12:15", "14:30", "16:30", "17:30", "19:00"],
+  bus4: ["07:30", "07:45", "09:15", "11:15", "12:15", "14:30", "16:30", "17:30", "19:00"],
+  bus5: ["07:30", "07:45", "09:30", "11:30", "12:15", "14:30", "16:30", "17:30", "19:00"],
+  bus6: ["07:30", "07:45", "09:45", "11:45", "12:15", "14:30", "16:30", "17:30", "19:00"],
+  solat: ["12:30"] // 6 bas bertolak 12:30 ke Masjid Hj Muhammad Yassin
+}
+        };
 
         const TRIP_DURATION_MINUTES = 15; 
         
@@ -295,7 +437,6 @@
         const demoDayInput = ref(1); 
         const activeTab = ref("weekday");
 
-        // Now expects format strictly like "07:30" or "22:00"
         function parseTimeToMinutes(timeStr) {
           const [hStr, mStr] = timeStr.split(':');
           return parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
@@ -309,7 +450,6 @@
           return now.value.getHours() * 60 + now.value.getMinutes();
         });
 
-        // Seconds computed to allow smooth, continuous progress bar tracking
         const virtualSeconds = computed(() => {
           if (isDemoMode.value) {
             return virtualMinutes.value * 60;
@@ -334,7 +474,6 @@
           return activeTab.value === 'weekday' ? scheduleRaw.weekday : scheduleRaw.friday;
         });
 
-        // Calculates smooth progress per second rather than per minute
         const activeBuses = computed(() => {
           const currentSecs = virtualSeconds.value;
           const activeList = [];
@@ -354,7 +493,7 @@
                   name: formatBusName(busKey),
                   isSolat: busKey === 'solat',
                   departTime: formatDisplayTime(timeStr),
-                  minutesRemaining: Math.ceil((endSecs - currentSecs) / 60), // Display minutes for readability
+                  minutesRemaining: Math.ceil((endSecs - currentSecs) / 60),
                   progress: Math.min(100, Math.max(0, progress))
                 });
               }
@@ -412,16 +551,14 @@
         });
 
         function formatBusName(key) {
-          if (key === 'solat') return "Khas Solat Jumaat (6 Buah Bas)";
+          if (key === 'solat') return "Khas Solat Jumaat (6 Bas)";
           return key.toUpperCase().replace('BUS', 'Bas ');
         }
 
-        // Now just returns the 24-hour time unmodified
         function formatDisplayTime(timeStr) {
           return timeStr;
         }
 
-        // Updated for 24-hour (HH:mm:ss) format
         const formattedTime = computed(() => {
           if (isDemoMode.value) {
             const [h, m] = demoTimeInput.value.split(':');
@@ -459,36 +596,36 @@
           const state = getTimeState(timeStr);
           
           if (state === 'active') {
-            return 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-500/10 animate-pulse';
+            return 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300 shadow-lg shadow-emerald-500/20 glow-emerald animate-pulse';
           } else if (state === 'past') {
-            return 'bg-slate-950/60 border-slate-900 text-slate-700 opacity-50';
+            return 'bg-slate-950/60 border-white/5 text-slate-600 opacity-40';
           } else {
             if (isNextDirectTrip(timeStr, busKey)) {
-              return 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md shadow-amber-500/10';
+              return 'bg-amber-500/20 border-amber-400/60 text-amber-300 shadow-lg shadow-amber-500/20 glow-amber';
             }
-            return 'bg-slate-800/40 border-slate-700/50 text-slate-300 hover:bg-slate-800 hover:border-slate-600 cursor-default';
+            return 'bg-slate-900/40 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 cursor-default';
           }
         }
 
         function getBusColorClass(busKey) {
-          if (busKey === 'solat') return 'bg-emerald-500';
-          if (busKey === 'bus1') return 'bg-cyan-500';
-          if (busKey === 'bus2') return 'bg-purple-500';
-          if (busKey === 'bus3') return 'bg-pink-500';
-          if (busKey === 'bus4') return 'bg-indigo-500'; 
-          if (busKey === 'bus5') return 'bg-teal-500';   
-          if (busKey === 'bus6') return 'bg-orange-500'; 
-          return 'bg-amber-500';
+          if (busKey === 'solat') return 'bg-emerald-400 glow-emerald';
+          if (busKey === 'bus1') return 'bg-cyan-400 glow-cyan';
+          if (busKey === 'bus2') return 'bg-purple-400';
+          if (busKey === 'bus3') return 'bg-pink-400';
+          if (busKey === 'bus4') return 'bg-indigo-400'; 
+          if (busKey === 'bus5') return 'bg-teal-400';   
+          if (busKey === 'bus6') return 'bg-orange-400'; 
+          return 'bg-amber-400 glow-amber';
         }
 
         onMounted(() => {
           timer = setInterval(() => {
             now.value = new Date();
-          }, 1000); // 1-second interval ensures UI (clock & progress bar) updates smoothly
+          }, 1000);
         });
 
         onUnmounted(() => {
-          clearInterval(timer);
+          if (timer) clearInterval(timer);
         });
 
         return {
