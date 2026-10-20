@@ -1,13 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#04060d">
   <title>UTHM Pagoh Shuttle Bus Tracker</title>
 
   <!-- Favicons -->
   <link rel="icon" type="image/x-icon" href="icon1.ico">
   <link rel="apple-touch-icon" href="icon2.png">
+
+  <!-- Theme + glass highlight (plain JS, runs before paint, independent of Vue) -->
+  <script>
+    (function () {
+      var d = document.documentElement, K = 'uthm-theme', mq = matchMedia('(prefers-color-scheme: dark)');
+      function saved() { try { return localStorage.getItem(K); } catch (e) { return null; } }
+      function apply(t) {
+        d.setAttribute('data-theme', t);
+        var m = document.querySelector('meta[name=theme-color]');
+        if (m) m.content = t === 'dark' ? '#04060d' : '#eaf0fb';
+      }
+      apply(saved() || (mq.matches ? 'dark' : 'light'));
+      mq.addEventListener('change', function (e) { if (!saved()) apply(e.matches ? 'dark' : 'light'); });
+      document.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('[data-set-theme]');
+        if (!b) return;
+        apply(b.dataset.setTheme);
+        try { localStorage.setItem(K, b.dataset.setTheme); } catch (x) {}
+      });
+      document.addEventListener('pointermove', function (e) {
+        var g = e.target.closest && e.target.closest('.glass');
+        if (!g) return;
+        var r = g.getBoundingClientRect();
+        g.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+        g.style.setProperty('--my', (e.clientY - r.top) + 'px');
+      }, { passive: true });
+    })();
+  </script>
 
   <!-- External CDNs: Tailwind CSS, Vue 3, FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,332 +44,336 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     [v-cloak] { display: none !important; }
 
+    /* ---------- Theme tokens ---------- */
+    :root {
+      color-scheme: light;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+      --bg: #eaf0fb; --o1: #6ea8ff; --o2: #c3a0ff; --o3: #7fe0c4; --o4: #ffcf8a; --oa: .75;
+      --ink: #14141a; --ink2: rgba(40,40,52,.72); --ink3: rgba(40,40,52,.48);
+      --g1: rgba(255,255,255,.62); --g2: rgba(255,255,255,.28); --solid: #f4f7fd;
+      --rim: rgba(255,255,255,1); --rim2: rgba(255,255,255,.4); --spec: rgba(255,255,255,.6); --edge: rgba(255,255,255,.8);
+      --shadow: 0 18px 50px -14px rgba(50,70,130,.3), 0 2px 10px rgba(50,70,130,.08);
+      --fill: rgba(255,255,255,.5); --fill-h: rgba(255,255,255,.78); --sep: rgba(60,60,80,.12); --thumb: rgba(255,255,255,.96);
+      --blue: #0a60d0; --green: #1c8a3e; --amber: #b85a00; --rose: #d1203a; --opt: #fff;
+    }
+    html[data-theme=dark] {
+      color-scheme: dark;
+      --bg: #04060d; --o1: #2563ff; --o2: #8b3dff; --o3: #0fb5a0; --o4: #f59e0b; --oa: .5;
+      --ink: #f5f5f7; --ink2: rgba(235,235,245,.72); --ink3: rgba(235,235,245,.45);
+      --g1: rgba(255,255,255,.13); --g2: rgba(255,255,255,.04); --solid: #15181f;
+      --rim: rgba(255,255,255,.55); --rim2: rgba(255,255,255,.12); --spec: rgba(255,255,255,.14); --edge: rgba(255,255,255,.22);
+      --shadow: 0 20px 50px -12px rgba(0,0,0,.65), 0 2px 10px rgba(0,0,0,.25);
+      --fill: rgba(255,255,255,.07); --fill-h: rgba(255,255,255,.14); --sep: rgba(255,255,255,.1); --thumb: rgba(255,255,255,.2);
+      --blue: #6cb0ff; --green: #4ade80; --amber: #ffb340; --rose: #ff7088; --opt: #1c1c22;
+    }
+
     body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #030712;
-      color: #f3f4f6;
-      overflow-x: hidden;
+      font-family: var(--font); background: var(--bg); color: var(--ink);
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+      padding-bottom: max(3rem, env(safe-area-inset-bottom)); transition: background .5s, color .3s;
     }
+    #app { padding-top: max(16px, env(safe-area-inset-top)); }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+    .ink { color: var(--ink); } .ink2 { color: var(--ink2); } .ink3 { color: var(--ink3); }
+    .hero-num { font-size: clamp(48px, 11vw, 64px); line-height: 1; font-weight: 700; }
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
-    .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* Ambient Liquid Orb Animations */
-    @keyframes orb-float-1 {
-      0%, 100% { transform: translate(0px, 0px) scale(1); }
-      33% { transform: translate(30px, -50px) scale(1.1); }
-      66% { transform: translate(-20px, 20px) scale(0.95); }
-    }
-    @keyframes orb-float-2 {
-      0%, 100% { transform: translate(0px, 0px) scale(1); }
-      33% { transform: translate(-40px, 30px) scale(1.05); }
-      66% { transform: translate(25px, -35px) scale(1.15); }
-    }
-    @keyframes orb-float-3 {
-      0%, 100% { transform: translate(0px, 0px) scale(1); }
-      50% { transform: translate(40px, 40px) scale(1.2); }
-    }
-
+    /* ---------- Ambient colour behind the glass ---------- */
+    @keyframes orb-float-1 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-50px) scale(1.1)} 66%{transform:translate(-20px,20px) scale(.95)} }
+    @keyframes orb-float-2 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(-40px,30px) scale(1.05)} 66%{transform:translate(25px,-35px) scale(1.15)} }
+    @keyframes orb-float-3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,40px) scale(1.2)} }
     .animate-orb-1 { animation: orb-float-1 18s ease-in-out infinite; }
     .animate-orb-2 { animation: orb-float-2 22s ease-in-out infinite; }
     .animate-orb-3 { animation: orb-float-3 25s ease-in-out infinite; }
+    .orbs { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+    .orb { position: absolute; border-radius: 50%; filter: blur(100px); opacity: var(--oa); transition: background .6s, opacity .6s; }
+    .orb.a { top:-12%; left:-10%; width:520px; height:520px; background:var(--o1); }
+    .orb.b { top:28%; right:-12%; width:560px; height:560px; background:var(--o2); }
+    .orb.c { bottom:-14%; left:18%; width:600px; height:600px; background:var(--o3); }
+    .orb.d { top:58%; left:52%; width:380px; height:380px; background:var(--o4); opacity:calc(var(--oa) * .6); }
 
-    /* Liquid Glassmorphism Styling */
-    .liquid-glass {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
-                  inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+    /* ---------- Liquid Glass material ---------- */
+    .glass {
+      position: relative; isolation: isolate; border-radius: 30px;
+      background: linear-gradient(150deg, var(--g1), var(--g2));
+      -webkit-backdrop-filter: blur(30px) saturate(190%); backdrop-filter: blur(30px) saturate(190%);
+      box-shadow: var(--shadow), inset 0 1px 0 var(--edge), inset 0 0 30px rgba(255,255,255,.04);
+      transition: background .4s, box-shadow .4s;
     }
+    /* specular rim: bright top-left, soft bottom-right, like light bending around the edge */
+    .glass::before {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.2px; pointer-events: none;
+      background: linear-gradient(140deg, var(--rim), transparent 32%, transparent 68%, var(--rim2));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+    }
+    /* sheen that follows the finger / cursor */
+    .glass::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s;
+      background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0), var(--spec), transparent 70%);
+    }
+    .glass:hover::after { opacity: 1; }
+    .tint { background: linear-gradient(150deg, color-mix(in srgb, var(--c) 24%, var(--g1)), color-mix(in srgb, var(--c) 8%, var(--g2))); }
+    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) { .glass { background: var(--solid); } }
+    @media (prefers-reduced-transparency: reduce) { .glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--solid); } }
 
-    .liquid-glass-interactive {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .liquid-glass-interactive:hover {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
-      border-color: rgba(255, 255, 255, 0.25);
-      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5),
-                  inset 0 1px 2px 0 rgba(255, 255, 255, 0.25);
-      transform: translateY(-2px);
-    }
+    /* flat inner surface (no blur, so nested content stays light on phones) */
+    .inset { background: var(--fill); border-radius: 20px; box-shadow: inset 0 1px 0 var(--edge); transition: background .25s; }
+    .inset:hover { background: var(--fill-h); }
 
-    .glass-input {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      transition: all 0.2s ease;
-    }
-    .glass-input:focus {
-      border-color: rgba(244, 63, 94, 0.5);
-      box-shadow: 0 0 15px rgba(244, 63, 94, 0.25);
-      outline: none;
-    }
+    /* ---------- Accent colours ---------- */
+    .c-green { --c: var(--green); --v: #30d158; } .c-amber { --c: var(--amber); --v: #ff9f0a; }
+    .c-blue  { --c: var(--blue);  --v: #0a84ff; } .c-rose  { --c: var(--rose);  --v: #ff453a; }
+    .t-c { color: var(--c); }
+    .chip { display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent); }
+    .tile { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; flex: none; font-size: 14px; color: #fff;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--v) 78%, #fff), var(--v));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 3px 10px -2px color-mix(in srgb, var(--v) 55%, transparent); }
+    .tile-lg { width: 56px; height: 56px; border-radius: 18px; font-size: 22px; }
+    @keyframes ping2 { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+    .pdot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+    .pdot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--c); animation: ping2 1.8s cubic-bezier(0,0,.2,1) infinite; }
+    .ldot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--ink3)); }
+    .glow-cyan { box-shadow: 0 0 14px rgba(34,211,238,.55); } .glow-emerald { box-shadow: 0 0 14px rgba(52,211,153,.55); } .glow-amber { box-shadow: 0 0 14px rgba(251,191,36,.55); }
 
-    /* Glow utility effects */
-    .glow-cyan { box-shadow: 0 0 20px rgba(6, 182, 212, 0.35); }
-    .glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.35); }
-    .glow-amber { box-shadow: 0 0 20px rgba(245, 158, 11, 0.35); }
-    .glow-rose { box-shadow: 0 0 20px rgba(244, 63, 94, 0.35); }
+    /* ---------- Segmented control (tabs + theme switch) ---------- */
+    .seg-wrap { display: flex; padding: 4px; border-radius: 999px; }
+    .seg { position: relative; display: flex; flex: 1; }
+    .seg .thumb { position: absolute; top: 0; bottom: 0; left: 0; width: 50%; border-radius: 999px; background: var(--thumb);
+      box-shadow: 0 4px 14px -2px rgba(0,0,0,.25), inset 0 1px 0 var(--edge); transition: transform .5s cubic-bezier(.34,1.35,.64,1); }
+    .seg button { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--ink2); transition: color .25s, transform .2s; }
+    .seg button.on { color: var(--ink); } .seg button:active { transform: scale(.96); }
+    .seg[data-tab=friday] .thumb, html[data-theme=dark] .seg-theme .thumb { transform: translateX(100%); }
+    .seg-theme button { flex: none; width: 42px; padding: 9px 0; }
+    html[data-theme=light] [data-set-theme=light], html[data-theme=dark] [data-set-theme=dark] { color: var(--ink); }
 
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(200%); }
-    }
-    .liquid-shimmer {
-      position: relative;
-      overflow: hidden;
-    }
-    .liquid-shimmer::after {
-      content: '';
-      position: absolute;
-      top: 0; right: 0; bottom: 0; left: 0;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-      animation: shimmer 2.5s infinite;
-    }
+    /* ---------- Timetable cells ---------- */
+    .cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; }
+    .cell { min-height: 52px; padding: 8px 6px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+      font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink);
+      background: var(--fill); box-shadow: inset 0 1px 0 var(--edge); transition: all .4s; }
+    .cell small { font-size: 9px; font-weight: 700; }
+    @keyframes beat { 50% { filter: brightness(1.2); } }
+    .cell-active, .cell-next { color: var(--c); background: color-mix(in srgb, var(--c) 20%, transparent);
+      box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent), 0 0 22px -4px color-mix(in srgb, var(--c) 60%, transparent); }
+    .cell-active { --c: var(--green); animation: beat 2.4s ease-in-out infinite; }
+    .cell-next { --c: var(--amber); }
+    .cell-past { opacity: .38; color: var(--ink3); background: transparent; box-shadow: none; }
+    .grp { padding: 20px 0; } .grp:first-child { padding-top: 0; } .grp:last-child { padding-bottom: 0; } .grp + .grp { border-top: 1px solid var(--sep); }
 
-    /* Custom Mobile Scrollbars */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.8); }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
+    /* ---------- Progress, switch, fields ---------- */
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+    .track { height: 8px; margin-top: 14px; border-radius: 99px; background: var(--fill-h); overflow: hidden; }
+    .bar { position: relative; overflow: hidden; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #30d158, #2dd4bf, #64d2ff); transition: width 1s linear; }
+    .bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); animation: shimmer 2.5s infinite; }
+    .sw { position: relative; flex: none; width: 51px; height: 31px; border-radius: 999px; background: var(--fill-h); box-shadow: inset 0 0 0 1px var(--sep); transition: background .3s; }
+    .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,.3); transition: transform .4s cubic-bezier(.34,1.4,.64,1); }
+    input:checked + .sw { background: #34c759; } input:checked + .sw::after { transform: translateX(20px); }
+    input:focus-visible + .sw { outline: 2px solid var(--blue); outline-offset: 3px; }
+    .field { background: var(--fill); color: var(--ink); border-radius: 14px; padding: 9px 14px; font: 600 14px var(--font); font-variant-numeric: tabular-nums;
+      box-shadow: inset 0 0 0 1px var(--sep); outline: none; transition: box-shadow .2s; }
+    .field:focus { box-shadow: inset 0 0 0 2px var(--blue), 0 0 0 4px color-mix(in srgb, var(--blue) 25%, transparent); }
+    option { background: var(--opt); color: var(--ink); }
+
+    .fade-enter-active, .fade-leave-active { transition: opacity .4s, transform .4s; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-8px) scale(.98); }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--sep); border-radius: 9999px; }
+    @media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation: none !important; transition-duration: .01ms !important; } }
   </style>
 </head>
-<body class="min-h-screen relative pb-12 selection:bg-cyan-500 selection:text-white">
+<body class="min-h-screen relative">
 
-  <!-- BACKGROUND FLOATING LIQUID GLOW ORBS -->
-  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-    <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-cyan-600/20 blur-[120px] animate-orb-1"></div>
-    <div class="absolute top-[30%] right-[-10%] w-[550px] h-[550px] rounded-full bg-purple-600/20 blur-[130px] animate-orb-2"></div>
-    <div class="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-emerald-600/15 blur-[140px] animate-orb-3"></div>
-    <div class="absolute top-[60%] left-[50%] w-[400px] h-[400px] rounded-full bg-amber-600/10 blur-[110px] animate-orb-1"></div>
+  <!-- AMBIENT BACKGROUND (what the glass refracts) -->
+  <div class="orbs" aria-hidden="true">
+    <div class="orb a animate-orb-1"></div>
+    <div class="orb b animate-orb-2"></div>
+    <div class="orb c animate-orb-3"></div>
+    <div class="orb d animate-orb-1"></div>
   </div>
 
   <!-- MAIN APP CONTAINER -->
-  <div id="app" class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8" v-cloak>
+  <div id="app" class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6" v-cloak>
+
+    <!-- APPEARANCE SWITCH: Light / Dark -->
+    <div class="flex justify-end mb-3">
+      <div class="glass seg-wrap">
+        <div class="seg seg-theme" role="group" aria-label="Appearance">
+          <span class="thumb"></span>
+          <button type="button" data-set-theme="light" aria-label="Light mode"><i class="fa-solid fa-sun"></i></button>
+          <button type="button" data-set-theme="dark" aria-label="Dark mode"><i class="fa-solid fa-moon"></i></button>
+        </div>
+      </div>
+    </div>
 
     <!-- HEADER -->
-    <header class="liquid-glass rounded-3xl p-5 sm:p-7 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-center gap-6 relative">
-      <!-- Top Specular Highlight Edge -->
-      <div class="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"></div>
-
-      <div class="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 w-full md:w-auto">
+    <header class="glass p-5 sm:p-7 mb-5 sm:mb-6 flex flex-col md:flex-row justify-between items-center gap-5">
+      <div class="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 sm:gap-5 w-full md:w-auto">
         <!-- Logo Box -->
-        <div class="h-14 sm:h-16 aspect-[3.63/1] bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center p-2.5 shadow-lg shadow-black/20 border border-white/40 shrink-0 transform transition-transform hover:scale-105">
+        <div class="h-14 sm:h-16 aspect-[3.63/1] bg-white/95 rounded-2xl flex items-center justify-center p-2.5 shadow-lg shadow-black/20 shrink-0 transition-transform hover:scale-105">
           <img src="logo.png" alt="UTHM Logo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
           <span class="hidden text-xs font-black tracking-wider text-slate-900 text-center">UTHM</span>
         </div>
 
-        <div class="flex flex-col justify-center h-full">
-          <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex flex-wrap justify-center sm:justify-start items-center gap-2.5">
+        <div>
+          <h1 class="text-[22px] sm:text-[28px] font-bold tracking-tight ink flex flex-wrap justify-center sm:justify-start items-center gap-x-3 gap-y-1.5">
             <span>UTHM Pagoh Shuttle</span>
-            <span class="text-xs font-semibold text-slate-400 font-mono">(Sem I 2026/2027)</span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 glow-emerald">
-              <span class="w-2 h-2 mr-2 rounded-full bg-emerald-400 animate-ping"></span> Live Status
-            </span>
+            <span class="text-sm font-medium ink3 num">(Sem I 2026/2027)</span>
+            <span class="chip c-green"><span class="pdot"></span> Live Status</span>
           </h1>
-          <p class="text-xs font-medium text-slate-300/80 mt-1 flex items-center justify-center sm:justify-start gap-1.5">
-            <i class="fa-solid fa-route text-cyan-400"></i> Kolej Kediaman Pagoh <i class="fa-solid fa-arrow-right-long text-slate-500 text-[10px]"></i> Kampus Pagoh
+          <p class="text-sm ink2 mt-1.5 flex items-center justify-center sm:justify-start gap-2">
+            <i class="fa-solid fa-route t-c c-blue"></i> Kolej Kediaman Pagoh <i class="fa-solid fa-arrow-right-long ink3 text-[11px]"></i> Kampus Pagoh
           </p>
         </div>
       </div>
 
-      <!-- Live Clock & Date Badge -->
-      <div class="text-center md:text-right w-full md:w-auto bg-slate-950/40 md:bg-transparent rounded-2xl p-4 md:p-0 border border-white/5 md:border-none">
-        <div class="text-3xl sm:text-4xl font-mono font-black text-amber-400 tracking-wider drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]">
-          {{ formattedTime }}
-        </div>
-        <div class="text-xs font-bold text-slate-300 mt-1 uppercase tracking-widest flex items-center justify-center md:justify-end gap-1.5">
-          <i class="fa-regular fa-calendar-check text-cyan-400"></i> {{ currentDayDisplay }}
-          <span v-if="isDemoMode" class="text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-full text-[10px] border border-rose-500/30 glow-rose">DEMO MODE</span>
+      <!-- Live Clock & Date -->
+      <div class="inset md:!bg-transparent md:!shadow-none p-4 md:p-0 text-center md:text-right w-full md:w-auto">
+        <div class="num text-[40px] sm:text-5xl font-bold leading-none ink">{{ formattedTime }}</div>
+        <div class="text-sm font-semibold ink2 mt-2.5 flex items-center justify-center md:justify-end gap-2">
+          <i class="fa-regular fa-calendar-check t-c c-blue"></i> {{ currentDayDisplay }}
+          <span v-if="isDemoMode" class="chip c-rose !py-0.5 !text-[10px]">DEMO MODE</span>
         </div>
       </div>
     </header>
 
     <!-- SYSTEM ALERTS (e.g., Weekend) -->
     <transition name="fade">
-      <div v-if="isWeekend && !isDemoMode" class="liquid-glass border-amber-500/30 text-amber-300 rounded-2xl p-5 mb-8 flex items-start gap-4 glow-amber">
-        <div class="p-3 bg-amber-500/20 rounded-xl text-amber-400 border border-amber-500/30 shrink-0">
-          <i class="fa-solid fa-triangle-exclamation text-xl"></i>
-        </div>
+      <div v-if="isWeekend && !isDemoMode" class="glass tint c-amber p-5 mb-6 flex items-start gap-4">
+        <div class="tile"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <div>
-          <h4 class="font-bold text-base text-amber-200">No Bus Operations Today (Weekend)</h4>
-          <p class="text-xs text-amber-300/80 mt-1 leading-relaxed">
-            Shuttle buses do not operate on weekends. You can enable the <strong class="text-white underline">Time Simulator</strong> at the bottom of the page to test weekday schedule automation!
+          <h4 class="font-bold text-base ink">No Bus Operations Today (Weekend)</h4>
+          <p class="text-sm ink2 mt-1 leading-relaxed">
+            Shuttle buses do not operate on weekends. You can enable the <strong class="ink">Time Simulator</strong> at the bottom of the page to test weekday schedule automation!
           </p>
         </div>
       </div>
     </transition>
 
-    <!-- DASHBOARD: TWO COLUMN GRID -->
-    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+    <!-- DASHBOARD -->
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6 items-start">
 
-      <!-- LEFT COLUMN: LIVE RUNNING STATS -->
-      <section class="lg:col-span-1 flex flex-col gap-6">
+      <!-- LEFT COLUMN: LIVE STATS -->
+      <section class="lg:col-span-1 flex flex-col gap-5 sm:gap-6">
 
         <!-- CARD 1: NEXT UPCOMING TRIP -->
-        <div class="liquid-glass rounded-3xl p-6 relative overflow-hidden group">
-          <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-          <h3 class="text-xs uppercase tracking-widest text-slate-300 font-extrabold mb-5 flex items-center gap-2">
-            <span class="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-500/30">
-              <i class="fa-solid fa-hourglass-half"></i>
-            </span>
-            Next Upcoming Trip
+        <div class="glass p-6">
+          <h3 class="flex items-center gap-3 text-[15px] font-bold ink mb-5">
+            <span class="tile c-amber"><i class="fa-solid fa-hourglass-half"></i></span> Next Upcoming Trip
           </h3>
 
-          <div v-if="!nextTripsData.minutesLeft" class="py-8 text-center text-slate-400">
-            <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-slate-800/50 flex items-center justify-center text-2xl border border-white/5">
-              <i class="fa-regular fa-moon text-amber-300"></i>
-            </div>
-            <p class="text-sm font-semibold text-slate-300">No remaining trips scheduled today.</p>
-            <p class="text-xs text-slate-500 mt-1">Check back tomorrow morning!</p>
+          <div v-if="!nextTripsData.minutesLeft" class="py-6 text-center">
+            <div class="tile tile-lg c-blue mx-auto mb-3"><i class="fa-regular fa-moon"></i></div>
+            <p class="text-sm font-semibold ink">No remaining trips scheduled today.</p>
+            <p class="text-xs ink3 mt-1">Check back tomorrow morning!</p>
           </div>
 
-          <div v-else class="text-center py-2">
-            <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Departure in</div>
-            <div class="text-4xl sm:text-5xl font-mono font-black text-white tracking-tight mb-5 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-              {{ nextTripCountdown }}
-            </div>
+          <div v-else class="text-center">
+            <div class="text-sm font-medium ink2">Departure in</div>
+            <div class="hero-num num ink my-3">{{ nextTripCountdown }}</div>
 
-            <!-- Sleek Glass Pill Badge Container for Departing Buses -->
-            <div class="flex flex-col gap-2.5 items-center justify-center">
-              <div v-for="trip in nextTripsData.trips" :key="trip.busKey"
-                   class="liquid-glass-interactive px-4 py-2 rounded-2xl text-xs flex flex-wrap items-center justify-center gap-2.5 w-full shadow-md">
-
-                <div class="flex items-center gap-2 whitespace-nowrap">
-                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
-                  <span class="font-extrabold text-amber-300 tracking-wide">{{ trip.bus }}</span>
-                  <span class="text-slate-400">at</span>
-                  <span class="font-mono text-white font-bold bg-slate-950/50 px-2 py-0.5 rounded-md border border-white/10">{{ trip.time }}</span>
+            <div class="flex flex-col gap-2.5 mt-5">
+              <div v-for="trip in nextTripsData.trips" :key="trip.busKey" class="inset c-amber px-4 py-3 text-sm flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+                <div class="flex items-center gap-2.5 whitespace-nowrap">
+                  <span class="pdot"></span>
+                  <span class="font-bold t-c">{{ trip.bus }}</span>
+                  <span class="ink3">at</span>
+                  <span class="num font-bold ink">{{ trip.time }}</span>
                 </div>
-
-                <div v-if="trip.isSolat" class="text-[11px] font-bold text-emerald-300 sm:border-l border-white/10 sm:pl-2.5 flex items-center gap-1.5 whitespace-nowrap">
-                  <i class="fa-solid fa-mosque text-emerald-400"></i> Masjid Hj Muhammad Yassin
+                <div v-if="trip.isSolat" class="c-green t-c text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap">
+                  <i class="fa-solid fa-mosque"></i> Masjid Hj Muhammad Yassin
                 </div>
-
               </div>
             </div>
           </div>
         </div>
 
         <!-- CARD 2: BUSES CURRENTLY MOVING -->
-        <div class="liquid-glass rounded-3xl p-6 relative overflow-hidden">
-          <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-          <h3 class="text-xs uppercase tracking-widest text-slate-300 font-extrabold mb-5 flex items-center gap-2">
-            <span class="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
-              <i class="fa-solid fa-bus animate-pulse"></i>
-            </span>
-            On Campus Roads
+        <div class="glass p-6">
+          <h3 class="flex items-center gap-3 text-[15px] font-bold ink mb-5">
+            <span class="tile c-green"><i class="fa-solid fa-bus"></i></span> On Campus Roads
           </h3>
 
-          <div v-if="activeBuses.length === 0" class="py-8 text-center text-slate-400">
-            <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-slate-800/50 flex items-center justify-center text-2xl border border-white/5">
-              <i class="fa-solid fa-square-parking text-slate-500"></i>
-            </div>
-            <p class="text-sm font-semibold text-slate-300">All buses parked at College Cafe.</p>
-            <p class="text-xs text-slate-500 mt-1">No shuttle actively in transit right now.</p>
+          <div v-if="activeBuses.length === 0" class="py-6 text-center">
+            <div class="tile tile-lg mx-auto mb-3" style="--v:#8e8e93"><i class="fa-solid fa-square-parking"></i></div>
+            <p class="text-sm font-semibold ink">All buses parked at College Cafe.</p>
+            <p class="text-xs ink3 mt-1">No shuttle actively in transit right now.</p>
           </div>
 
-          <div v-else class="space-y-4 max-h-[320px] overflow-y-auto pr-1">
-            <div v-for="bus in activeBuses" :key="bus.id" class="liquid-glass-interactive p-4 rounded-2xl relative">
-              <div class="flex justify-between items-start mb-2">
+          <div v-else class="flex flex-col gap-3 max-h-[340px] overflow-y-auto pr-1">
+            <div v-for="bus in activeBuses" :key="bus.id" class="inset c-green p-4">
+              <div class="flex justify-between items-start gap-3">
                 <div>
-                  <span class="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 text-xs px-3 py-1 rounded-full font-black border border-emerald-500/30 glow-emerald">
-                    <i class="fa-solid fa-circle text-[8px] animate-ping"></i> {{ bus.name }}
-                  </span>
-                  <p class="text-[11px] text-slate-300 mt-2">Departed: <strong class="text-white font-mono bg-slate-950/40 px-1.5 py-0.5 rounded border border-white/10">{{ bus.departTime }}</strong></p>
-                  <p v-if="bus.isSolat" class="text-[10px] text-emerald-300/90 font-semibold mt-1 flex items-center gap-1">
-                    <i class="fa-solid fa-location-dot text-emerald-400"></i> Direct to Masjid Yassin
+                  <span class="chip"><span class="pdot"></span> {{ bus.name }}</span>
+                  <p class="text-xs ink2 mt-2.5">Departed: <strong class="num ink">{{ bus.departTime }}</strong></p>
+                  <p v-if="bus.isSolat" class="text-xs t-c font-semibold mt-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-location-dot"></i> Direct to Masjid Yassin
                   </p>
                 </div>
-                <div class="text-right">
-                  <span class="text-xs text-emerald-400 font-mono font-extrabold bg-emerald-950/50 px-2 py-1 rounded-lg border border-emerald-500/20">
-                    {{ bus.minutesRemaining }}m left
-                  </span>
-                </div>
+                <span class="num text-sm font-bold t-c whitespace-nowrap">{{ bus.minutesRemaining }}m left</span>
               </div>
-
-              <!-- Animated Liquid Progress Bar -->
-              <div class="w-full bg-slate-950/60 rounded-full h-2 overflow-hidden mt-3 border border-white/10 p-0.5">
-                <div class="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 h-full rounded-full transition-all duration-1000 ease-linear liquid-shimmer" :style="{ width: bus.progress + '%' }"></div>
-              </div>
+              <div class="track"><div class="bar" :style="{ width: bus.progress + '%' }"></div></div>
             </div>
           </div>
         </div>
 
       </section>
 
-      <!-- RIGHT COLUMN: FULL SCHEDULE AND TIMELINE -->
-      <section class="lg:col-span-2 flex flex-col gap-6">
+      <!-- RIGHT COLUMN: SCHEDULE -->
+      <section class="lg:col-span-2 flex flex-col gap-5 sm:gap-6">
 
-        <!-- VIEW TABS WITH SLIDING GLASS STYLE -->
-        <div class="liquid-glass p-1.5 rounded-2xl flex gap-2 shadow-lg">
-          <button 
-            @click="activeTab = 'weekday'"
-            :class="activeTab === 'weekday' ? 'bg-gradient-to-r from-blue-600/80 to-indigo-600/80 text-white shadow-lg border border-white/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
-            class="flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 flex items-center justify-center gap-2"
-          >
-            <i class="fa-solid fa-calendar-days text-cyan-300"></i> Isnin - Khamis
-          </button>
-          <button 
-            @click="activeTab = 'friday'"
-            :class="activeTab === 'friday' ? 'bg-gradient-to-r from-emerald-600/80 to-teal-600/80 text-white shadow-lg border border-white/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
-            class="flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 flex items-center justify-center gap-2"
-          >
-            <i class="fa-solid fa-mosque text-emerald-300"></i> Jumaat
-          </button>
+        <!-- VIEW TABS -->
+        <div class="glass seg-wrap">
+          <div class="seg" :data-tab="activeTab">
+            <span class="thumb"></span>
+            <button type="button" @click="activeTab = 'weekday'" :class="{ on: activeTab === 'weekday' }" :aria-pressed="activeTab === 'weekday'">
+              <i class="fa-solid fa-calendar-days t-c c-blue"></i> Isnin - Khamis
+            </button>
+            <button type="button" @click="activeTab = 'friday'" :class="{ on: activeTab === 'friday' }" :aria-pressed="activeTab === 'friday'">
+              <i class="fa-solid fa-mosque t-c c-green"></i> Jumaat
+            </button>
+          </div>
         </div>
 
-        <!-- TIMELINE COMPONENT -->
-        <div class="liquid-glass rounded-3xl p-5 sm:p-7 shadow-xl overflow-x-auto">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2 border-b border-white/10 pb-4">
+        <!-- TIMELINE -->
+        <div class="glass p-5 sm:p-7">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
             <div>
-              <h3 class="text-base font-extrabold text-white flex items-center gap-2.5">
-                <i class="fa-solid fa-list-ul text-cyan-400"></i> Schedule Timeline
+              <h3 class="text-lg font-bold ink flex items-center gap-3">
+                <span class="tile c-blue"><i class="fa-solid fa-list-ul"></i></span> Schedule Timeline
               </h3>
-              <p class="text-xs text-slate-400 mt-0.5">Automated status tracking based on current university hours</p>
+              <p class="text-sm ink2 mt-1.5">Automated status tracking based on current university hours</p>
             </div>
-            <div class="flex items-center gap-3 text-[11px] font-medium text-slate-300 bg-slate-950/40 px-3 py-1.5 rounded-xl border border-white/10">
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Active</span>
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Next</span>
-              <span class="flex items-center gap-1 opacity-50"><span class="w-2 h-2 rounded-full bg-slate-600"></span> Past</span>
+            <div class="inset !rounded-full flex items-center gap-4 px-4 py-2 text-xs font-medium ink2 self-start">
+              <span class="flex items-center gap-1.5"><span class="ldot c-green"></span> Active</span>
+              <span class="flex items-center gap-1.5"><span class="ldot c-amber"></span> Next</span>
+              <span class="flex items-center gap-1.5 opacity-60"><span class="ldot"></span> Past</span>
             </div>
           </div>
 
-          <div class="space-y-6 min-w-[320px]">
-            <div v-for="(times, busKey) in currentScheduleData" :key="busKey" class="border-b border-white/5 pb-6 last:border-0 last:pb-0">
-              <div class="flex items-center gap-2.5 mb-3.5">
-                <span class="w-3.5 h-3.5 rounded-full shadow-md" :class="getBusColorClass(busKey)"></span>
-                <span class="text-sm font-extrabold uppercase text-white tracking-wider">{{ formatBusName(busKey) }}</span>
-                <span v-if="busKey === 'solat'" class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  Solat Jumaat Special Route
-                </span>
+          <div>
+            <div v-for="(times, busKey) in currentScheduleData" :key="busKey" class="grp">
+              <div class="flex items-center flex-wrap gap-2.5 mb-3.5">
+                <span class="w-3.5 h-3.5 rounded-full" :class="getBusColorClass(busKey)"></span>
+                <span class="text-[15px] font-bold ink">{{ formatBusName(busKey) }}</span>
+                <span v-if="busKey === 'solat'" class="chip c-green !text-[11px] !py-0.5">Solat Jumaat Special Route</span>
               </div>
 
-              <!-- Time Grid Cells -->
-              <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5">
-                <div 
-                  v-for="time in times" 
-                  :key="time"
-                  :class="getTimeCellClass(time, busKey)"
-                  class="p-2.5 rounded-xl text-center font-mono font-bold transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
-                >
-                  <span class="text-xs tracking-tight">{{ formatDisplayTime(time) }}</span>
-                  <span class="text-[8px] uppercase font-sans tracking-widest font-black" v-if="getTimeState(time) === 'active'">ON ROAD</span>
-                  <span class="text-[8px] uppercase font-sans tracking-widest font-black" v-else-if="getTimeState(time) === 'upcoming' && isNextDirectTrip(time, busKey)">NEXT</span>
+              <div class="cells">
+                <div v-for="time in times" :key="time" :class="getTimeCellClass(time, busKey)">
+                  <span>{{ formatDisplayTime(time) }}</span>
+                  <small v-if="getTimeState(time) === 'active'">On road</small>
+                  <small v-else-if="getTimeState(time) === 'upcoming' && isNextDirectTrip(time, busKey)">Next</small>
                 </div>
               </div>
             </div>
@@ -351,48 +384,41 @@
     </main>
 
     <!-- SANDBOX / TIME CONTROLLER -->
-    <footer class="mt-8 sm:mt-12 liquid-glass border-dashed border-slate-600/50 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div class="max-w-xl">
-          <h4 class="font-extrabold text-white flex items-center gap-2.5 text-base">
-            <span class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center border border-rose-500/30">
-              <i class="fa-solid fa-flask animate-pulse"></i>
-            </span>
-            Time Simulator & Debug Sandbox
-          </h4>
-          <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
-            Test and verify bus schedules in real-time. Toggle manual mode, set custom departure times (e.g., <span class="font-mono text-amber-300 font-bold">07:45</span> for morning rush or <span class="font-mono text-emerald-300 font-bold">12:30 Friday</span> for Solat Jumaat).
-          </p>
-        </div>
+    <footer class="glass mt-6 sm:mt-8 p-6 flex flex-col lg:flex-row justify-between lg:items-center gap-5">
+      <div class="max-w-xl">
+        <h4 class="font-bold ink text-base flex items-center gap-3">
+          <span class="tile c-rose"><i class="fa-solid fa-flask"></i></span> Time Simulator &amp; Debug Sandbox
+        </h4>
+        <p class="text-sm ink2 mt-2.5 leading-relaxed">
+          Test and verify bus schedules in real-time. Toggle manual mode, set custom departure times (e.g., <b class="num c-amber t-c">07:45</b> for morning rush or <b class="num c-green t-c">12:30 Friday</b> for Solat Jumaat).
+        </p>
+      </div>
 
-        <div class="flex flex-wrap gap-3 items-center w-full lg:w-auto bg-slate-950/60 p-3 rounded-2xl border border-white/10">
-          <!-- Toggle Manual Time Switch -->
-          <label class="inline-flex items-center cursor-pointer mr-2 select-none">
-            <input type="checkbox" v-model="isDemoMode" class="sr-only peer">
-            <div class="relative w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500 shadow-inner"></div>
-            <span class="ms-3 text-xs font-extrabold text-slate-200">Enable Demo</span>
-          </label>
+      <div class="inset flex flex-wrap items-center gap-3 p-3 w-full lg:w-auto">
+        <label class="flex items-center gap-3 cursor-pointer select-none pl-1 pr-2">
+          <input type="checkbox" v-model="isDemoMode" class="sr-only">
+          <span class="sw"></span>
+          <span class="text-sm font-semibold ink">Enable Demo</span>
+        </label>
 
-          <!-- Input Controls -->
-          <div v-if="isDemoMode" class="flex flex-wrap sm:flex-nowrap gap-2 items-center w-full sm:w-auto">
-            <input type="time" v-model="demoTimeInput" class="glass-input text-white text-xs sm:text-sm font-mono font-bold rounded-xl px-3 py-1.5 w-full sm:w-auto">
-            <select v-model="demoDayInput" class="glass-input text-white text-xs sm:text-sm font-bold rounded-xl px-3 py-1.5 w-full sm:w-auto">
-              <option :value="1" class="bg-slate-900 text-white">Isnin - Khamis</option>
-              <option :value="5" class="bg-slate-900 text-white">Jumaat</option>
-            </select>
-          </div>
+        <div v-if="isDemoMode" class="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
+          <input type="time" v-model="demoTimeInput" class="field w-full sm:w-auto">
+          <select v-model="demoDayInput" class="field w-full sm:w-auto">
+            <option :value="1">Isnin - Khamis</option>
+            <option :value="5">Jumaat</option>
+          </select>
         </div>
       </div>
     </footer>
 
     <!-- FOOTER INFO -->
-    <div class="mt-8 mb-4 text-center space-y-2">
-      <p class="text-sm font-bold text-rose-400/90 flex items-center justify-center gap-1.5">
-        Built with <i class="fa-solid fa-heart text-rose-500 animate-bounce"></i> for UTHM Pagoh Students
+    <div class="mt-8 mb-4 text-center space-y-1.5">
+      <p class="text-sm font-semibold ink2">
+        Built with <i class="fa-solid fa-heart c-rose t-c"></i> for UTHM Pagoh Students
       </p>
-      <p class="text-xs text-slate-400">
-        Official GPS tracking available at 
-        <a href="https://uthm.katsana.com/#/campus/pagoh/route/12" target="_blank" rel="noopener noreferrer" class="text-cyan-400 font-bold hover:underline inline-flex items-center gap-1">
+      <p class="text-xs ink3">
+        Official GPS tracking available at
+        <a href="https://uthm.katsana.com/#/campus/pagoh/route/12" target="_blank" rel="noopener noreferrer" class="c-blue t-c font-semibold hover:underline inline-flex items-center gap-1">
           UTHM KATSANA(R) Shuttle <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
         </a>
       </p>
@@ -596,14 +622,14 @@ friday: {
           const state = getTimeState(timeStr);
           
           if (state === 'active') {
-            return 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300 shadow-lg shadow-emerald-500/20 glow-emerald animate-pulse';
+            return 'cell cell-active';
           } else if (state === 'past') {
-            return 'bg-slate-950/60 border-white/5 text-slate-600 opacity-40';
+            return 'cell cell-past';
           } else {
             if (isNextDirectTrip(timeStr, busKey)) {
-              return 'bg-amber-500/20 border-amber-400/60 text-amber-300 shadow-lg shadow-amber-500/20 glow-amber';
+              return 'cell cell-next';
             }
-            return 'bg-slate-900/40 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 cursor-default';
+            return 'cell';
           }
         }
 
